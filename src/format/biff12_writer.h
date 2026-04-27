@@ -63,7 +63,7 @@ cxlsb_error_t cxlsb_biff12_writer_write_ws_dim(cxlsb_biff12_writer_t* writer,
                                                 uint32_t last_row,
                                                 uint32_t last_col);
 
-uint8_t* cxlsb_biff12_writer_get_buffer(cxlsb_biff12_writer_t* writer);
+const uint8_t* cxlsb_biff12_writer_get_buffer(cxlsb_biff12_writer_t* writer);
 
 size_t cxlsb_biff12_writer_get_length(cxlsb_biff12_writer_t* writer);
 

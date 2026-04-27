@@ -55,55 +55,49 @@ cxlsb_error_t cxlsb_biff12_writer_write_empty_record(cxlsb_biff12_writer_t* writ
     return cxlsb_biff12_writer_write_record_header(writer, record_type, 0);
 }
 
-cxlsb_error_t cxlsb_biff12_writer_write_varint(cxlsb_biff12_writer_t* writer, 
-                                                uint32_t value) {
-    uint8_t buf[5];
-    int len = cxlsb_varint_encode(value, buf);
-    return cxlsb_buffer_writer_write_bytes(writer->buffer, buf, len);
-}
-
-cxlsb_error_t cxlsb_biff12_writer_write_wide_string(cxlsb_biff12_writer_t* writer,
-                                                     const char* str) {
-    if (str == NULL) return cxlsb_buffer_writer_write_int(writer->buffer, 0);
-    
-    size_t str_len = strlen(str);
-    cxlsb_error_t err = cxlsb_buffer_writer_write_int(writer->buffer, (uint32_t)str_len);
-    if (err != CXLSB_OK) return err;
-    
-    size_t utf16_len = cxlsb_utf16le_byte_length(str);
-    uint8_t* utf16_buf = (uint8_t*)malloc(utf16_len);
-    if (utf16_buf == NULL) return CXLSB_ERR_NO_MEMORY;
-    
-    err = cxlsb_utf8_to_utf16le(str, utf16_buf, &utf16_len);
-    if (err != CXLSB_OK) { free(utf16_buf); return err; }
-    
-    err = cxlsb_buffer_writer_write_bytes(writer->buffer, utf16_buf, utf16_len);
-    free(utf16_buf);
-    return err;
+static cxlsb_error_t write_cell_ref(cxlsb_biff12_writer_t* writer, uint32_t col, uint32_t xf_id) {
+    cxlsb_buffer_writer_write_int(writer->buffer, col);
+    cxlsb_buffer_writer_write_byte(writer->buffer, xf_id & 0xff);
+    cxlsb_buffer_writer_write_byte(writer->buffer, (xf_id >> 8) & 0xff);
+    cxlsb_buffer_writer_write_byte(writer->buffer, (xf_id >> 16) & 0xff);
+    cxlsb_buffer_writer_write_byte(writer->buffer, 0);
+    return CXLSB_OK;
 }
 
 cxlsb_error_t cxlsb_biff12_writer_write_cell_real(cxlsb_biff12_writer_t* writer,
                                                    uint32_t row, uint32_t col,
                                                    double value, uint32_t xf_id) {
-    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_REAL, 20);
+    (void)row;
+    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_REAL, 16);
     if (err != CXLSB_OK) return err;
-    cxlsb_buffer_writer_write_int(writer->buffer, row);
-    cxlsb_buffer_writer_write_int(writer->buffer, col);
-    cxlsb_buffer_writer_write_int(writer->buffer, xf_id);
+    write_cell_ref(writer, col, xf_id);
     return cxlsb_buffer_writer_write_double(writer->buffer, value);
+}
+
+cxlsb_error_t cxlsb_biff12_writer_write_cell_rk(cxlsb_biff12_writer_t* writer,
+                                                 uint32_t row, uint32_t col,
+                                                 double value, uint32_t xf_id) {
+    (void)row;
+    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_RK, 12);
+    if (err != CXLSB_OK) return err;
+    write_cell_ref(writer, col, xf_id);
+    
+    uint64_t bits;
+    memcpy(&bits, &value, sizeof(double));
+    uint32_t rk = (uint32_t)(bits >> 32);
+    return cxlsb_buffer_writer_write_int(writer->buffer, rk);
 }
 
 cxlsb_error_t cxlsb_biff12_writer_write_cell_st(cxlsb_biff12_writer_t* writer,
                                                  uint32_t row, uint32_t col,
                                                  const char* str, uint32_t xf_id) {
+    (void)row;
     size_t utf16_len = cxlsb_utf16le_byte_length(str);
-    uint32_t record_size = 16 + 1 + 4 + utf16_len;
+    uint32_t record_size = 8 + 1 + 4 + utf16_len;
     
     cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_ST, record_size);
     if (err != CXLSB_OK) return err;
-    cxlsb_buffer_writer_write_int(writer->buffer, row);
-    cxlsb_buffer_writer_write_int(writer->buffer, col);
-    cxlsb_buffer_writer_write_int(writer->buffer, xf_id);
+    write_cell_ref(writer, col, xf_id);
     cxlsb_buffer_writer_write_byte(writer->buffer, 0);
     return cxlsb_biff12_writer_write_wide_string(writer, str);
 }
@@ -111,33 +105,30 @@ cxlsb_error_t cxlsb_biff12_writer_write_cell_st(cxlsb_biff12_writer_t* writer,
 cxlsb_error_t cxlsb_biff12_writer_write_cell_isst(cxlsb_biff12_writer_t* writer,
                                                    uint32_t row, uint32_t col,
                                                    uint32_t sst_index, uint32_t xf_id) {
-    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_ISST, 16);
+    (void)row;
+    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_ISST, 12);
     if (err != CXLSB_OK) return err;
-    cxlsb_buffer_writer_write_int(writer->buffer, row);
-    cxlsb_buffer_writer_write_int(writer->buffer, col);
-    cxlsb_buffer_writer_write_int(writer->buffer, xf_id);
+    write_cell_ref(writer, col, xf_id);
     return cxlsb_buffer_writer_write_int(writer->buffer, sst_index);
 }
 
 cxlsb_error_t cxlsb_biff12_writer_write_cell_bool(cxlsb_biff12_writer_t* writer,
                                                    uint32_t row, uint32_t col,
                                                    bool value, uint32_t xf_id) {
-    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_BOOL, 13);
+    (void)row;
+    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_BOOL, 9);
     if (err != CXLSB_OK) return err;
-    cxlsb_buffer_writer_write_int(writer->buffer, row);
-    cxlsb_buffer_writer_write_int(writer->buffer, col);
-    cxlsb_buffer_writer_write_int(writer->buffer, xf_id);
+    write_cell_ref(writer, col, xf_id);
     return cxlsb_buffer_writer_write_byte(writer->buffer, value ? 1 : 0);
 }
 
 cxlsb_error_t cxlsb_biff12_writer_write_cell_blank(cxlsb_biff12_writer_t* writer,
                                                     uint32_t row, uint32_t col,
                                                     uint32_t xf_id) {
-    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_BLANK, 12);
+    (void)row;
+    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_CELL_BLANK, 8);
     if (err != CXLSB_OK) return err;
-    cxlsb_buffer_writer_write_int(writer->buffer, row);
-    cxlsb_buffer_writer_write_int(writer->buffer, col);
-    return cxlsb_buffer_writer_write_int(writer->buffer, xf_id);
+    return write_cell_ref(writer, col, xf_id);
 }
 
 cxlsb_error_t cxlsb_biff12_writer_write_row_header(cxlsb_biff12_writer_t* writer,
@@ -172,14 +163,33 @@ cxlsb_error_t cxlsb_biff12_writer_write_ws_dim(cxlsb_biff12_writer_t* writer,
     return cxlsb_buffer_writer_write_int(writer->buffer, last_col);
 }
 
-uint8_t* cxlsb_biff12_writer_get_buffer(cxlsb_biff12_writer_t* writer) {
-    return cxlsb_buffer_writer_get_buffer(writer->buffer);
-}
-
-size_t cxlsb_biff12_writer_get_length(cxlsb_biff12_writer_t* writer) {
-    return cxlsb_buffer_writer_get_length(writer->buffer);
+cxlsb_error_t cxlsb_biff12_writer_write_wide_string(cxlsb_biff12_writer_t* writer, const char* str) {
+    size_t len = strlen(str);
+    size_t utf16_len = len * 2;
+    
+    cxlsb_buffer_writer_write_int(writer->buffer, len);
+    
+    uint8_t* utf16_buf = (uint8_t*)malloc(utf16_len);
+    if (utf16_buf == NULL) return CXLSB_ERR_NO_MEMORY;
+    
+    cxlsb_utf8_to_utf16le(str, utf16_buf, &utf16_len);
+    cxlsb_error_t err = cxlsb_buffer_writer_write_bytes(writer->buffer, utf16_buf, utf16_len);
+    free(utf16_buf);
+    return err;
 }
 
 void cxlsb_biff12_writer_reset(cxlsb_biff12_writer_t* writer) {
-    cxlsb_buffer_writer_reset(writer->buffer);
+    if (writer != NULL && writer->buffer != NULL) {
+        cxlsb_buffer_writer_reset(writer->buffer);
+    }
+}
+
+size_t cxlsb_biff12_writer_get_length(cxlsb_biff12_writer_t* writer) {
+    if (writer == NULL || writer->buffer == NULL) return 0;
+    return cxlsb_buffer_writer_get_length(writer->buffer);
+}
+
+const uint8_t* cxlsb_biff12_writer_get_buffer(cxlsb_biff12_writer_t* writer) {
+    if (writer == NULL || writer->buffer == NULL) return NULL;
+    return cxlsb_buffer_writer_get_buffer(writer->buffer);
 }
