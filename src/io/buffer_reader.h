@@ -40,4 +40,6 @@ void cxlsb_buffer_reader_set_position(cxlsb_buffer_reader_t* reader, size_t posi
 
 bool cxlsb_buffer_reader_is_eof(cxlsb_buffer_reader_t* reader);
 
+const uint8_t* cxlsb_buffer_reader_get_buffer(cxlsb_buffer_reader_t* reader);
+
 #endif /* CXLSB_BUFFER_READER_H */

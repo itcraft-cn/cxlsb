@@ -2,6 +2,7 @@
 #define CXLSB_XML_GEN_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include "cxlsb/error_codes.h"
 

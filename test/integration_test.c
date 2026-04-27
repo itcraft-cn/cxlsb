@@ -1,5 +1,6 @@
 #include <cxlsb/types.h>
 #include <cxlsb/error_codes.h>
+#include <cxlsb/cell_data.h>
 #include <cxlsb/xlsb_writer.h>
 #include <cxlsb/xlsb_reader.h>
 #include <stdio.h>
@@ -26,7 +27,7 @@ static void test_cell_data(void) {
     cxlsb_cell_data_t text = cxlsb_cell_text("hello");
     assert(text.type == CXLSB_CELL_TEXT);
     assert(strcmp(text.value.text, "hello") == 0);
-    free(text.value.text);
+    free((void*)text.value.text);
     
     cxlsb_cell_data_t bool_val = cxlsb_cell_bool(true);
     assert(bool_val.type == CXLSB_CELL_BOOL);

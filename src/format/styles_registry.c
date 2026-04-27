@@ -2,6 +2,7 @@
 #include "biff12_record_types.h"
 #include "../io/buffer_writer.h"
 #include <stdlib.h>
+#include <string.h>
 
 cxlsb_styles_registry_t* cxlsb_styles_registry_create(void) {
     cxlsb_styles_registry_t* registry = (cxlsb_styles_registry_t*)malloc(sizeof(cxlsb_styles_registry_t));
@@ -14,7 +15,7 @@ cxlsb_styles_registry_t* cxlsb_styles_registry_create(void) {
     registry->xf_count = 0;
     registry->default_xf_id = 0;
     
-    cxlsb_xf_t default_xf = {0, 0, 0, 0, 0, 0};
+    cxlsb_xf_t default_xf = {0, 0, 0, 0, 0};
     registry->xfs[registry->xf_count++] = default_xf;
     return registry;
 }

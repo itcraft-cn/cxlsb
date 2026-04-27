@@ -1,4 +1,5 @@
 #include <cxlsb/xlsb_writer.h>
+#include <cxlsb/cell_data.h>
 #include <cxlsb/types.h>
 #include <stdio.h>
 #include <stdlib.h>

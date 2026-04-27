@@ -9,6 +9,7 @@
 #include "../format/biff12_writer.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 struct cxlsb_writer {
     cxlsb_container_t* container;

@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include "src/util/varint.h"
-#include "src/util/utf16.h"
-#include "src/util/xml_gen.h"
-#include "src/util/rels_gen.h"
+#include "../src/util/varint.h"
+#include "../src/util/utf16.h"
+#include "../src/util/xml_gen.h"
+#include "../src/util/rels_gen.h"
 
 static void test_varint_encode_decode(void) {
     uint8_t buf[10];

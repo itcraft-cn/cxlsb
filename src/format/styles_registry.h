@@ -6,6 +6,14 @@
 #include "cxlsb/types.h"
 #include "cxlsb/error_codes.h"
 
+typedef struct cxlsb_xf {
+    uint32_t num_fmt_id;
+    uint32_t font_id;
+    uint32_t fill_id;
+    uint32_t border_id;
+    uint32_t xf_id;
+} cxlsb_xf_t;
+
 typedef struct cxlsb_styles_registry {
     cxlsb_xf_t* xfs;
     uint32_t xf_count;

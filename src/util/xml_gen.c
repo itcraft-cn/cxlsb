@@ -1,6 +1,7 @@
 #include "xml_gen.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 static const char* THEME_XML = 
 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"

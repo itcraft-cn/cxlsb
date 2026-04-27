@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "src/io/buffer_writer.h"
-#include "src/io/buffer_reader.h"
+#include "../src/io/buffer_writer.h"
+#include "../src/io/buffer_reader.h"
 
 static void test_buffer_writer_create(void) {
     cxlsb_buffer_writer_t* writer = cxlsb_buffer_writer_create(1024);

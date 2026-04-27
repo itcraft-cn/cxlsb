@@ -2,6 +2,7 @@
 #include <zip.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 cxlsb_container_t* cxlsb_container_create(const char* path) {
     if (path == NULL) return NULL;
@@ -44,13 +45,13 @@ cxlsb_error_t cxlsb_container_add_entry(cxlsb_container_t* container,
     zip_source_t* source = zip_source_buffer(container->zip_handle, data, length, 0);
     if (source == NULL) return CXLSB_ERR_ZIP_ADD_FAILED;
     
-    int64_t index = zip_file_add(container->zip_handle, name, source, ZIP_FL_OVERWRITE);
+    int64_t index = zip_file_add(container->zip_handle, name, source, 0);
     if (index < 0) {
         zip_source_free(source);
         return CXLSB_ERR_ZIP_ADD_FAILED;
     }
     
-    if (zip_set_file_compression(container->zip_handle, index, ZIP_CM_DEFLATE, 6) != 0) {
+    if (zip_set_file_compression(container->zip_handle, index, ZIP_CM_STORE, 0) != 0) {
         return CXLSB_ERR_ZIP_ADD_FAILED;
     }
     return CXLSB_OK;

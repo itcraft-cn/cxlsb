@@ -3,12 +3,12 @@
 #include <stdio.h>
 
 cxlsb_error_t cxlsb_rels_gen_root(uint8_t** out, size_t* out_length) {
-    char* buffer = (char*)malloc(512);
+    char* buffer = (char*)malloc(1024);
     if (buffer == NULL) {
         return CXLSB_ERR_NO_MEMORY;
     }
     
-    int len = snprintf(buffer, 512,
+    int len = snprintf(buffer, 1024,
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
         "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n"
         "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.bin\"/>\n"

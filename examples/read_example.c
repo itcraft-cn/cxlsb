@@ -2,7 +2,7 @@
 #include <cxlsb/types.h>
 #include <stdio.h>
 
-static void row_handler(int row, int col_count, const cxlsb_cell_data_t* cells, void* user_data) {
+static void row_handler(int row, int col_count, cxlsb_cell_data_t* cells, void* user_data) {
     int* total_rows = (int*)user_data;
     (*total_rows)++;
     

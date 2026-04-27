@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "cxlsb/error_codes.h"
 
 typedef struct cxlsb_buffer_writer {
