@@ -86,11 +86,10 @@ static void write_xl_wide_string(cxlsb_biff12_writer_t* biff12, const char* str)
     cxlsb_buffer_writer_write_int(biff12->buffer, len);
     
     uint8_t* utf16_buf = (uint8_t*)malloc(utf16_len);
-    if (utf16_buf != NULL) {
-        cxlsb_utf8_to_utf16le(str, utf16_buf, &utf16_len);
-        cxlsb_buffer_writer_write_bytes(biff12->buffer, utf16_buf, utf16_len);
-        free(utf16_buf);
-    }
+    if (utf16_buf == NULL) return;
+    cxlsb_utf8_to_utf16le(str, utf16_buf, &utf16_len);
+    cxlsb_buffer_writer_write_bytes(biff12->buffer, utf16_buf, utf16_len);
+    free(utf16_buf);
 }
 
 static void write_brt_bundle_sh(cxlsb_biff12_writer_t* biff12, uint32_t sheet_id, const char* name) {
