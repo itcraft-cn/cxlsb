@@ -73,7 +73,6 @@ void cxlsb_writer_destroy(cxlsb_writer_t* writer) {
         if (writer->container) cxlsb_container_destroy(writer->container);
         if (writer->current_sheet_name) free(writer->current_sheet_name);
         for (int i = 0; i < writer->sheet_count; i++) {
-            if (writer->sheet_data_cache[i].data) free(writer->sheet_data_cache[i].data);
             if (writer->sheet_data_cache[i].name) free(writer->sheet_data_cache[i].name);
         }
         free(writer);
@@ -168,49 +167,41 @@ static cxlsb_error_t write_container_structure(cxlsb_writer_t* writer) {
     err = cxlsb_xml_gen_content_types(writer->sheet_count, cxlsb_sst_table_get_count(writer->sst) > 0, &data, &length);
     if (err != CXLSB_OK) return err;
     err = cxlsb_container_add_entry(writer->container, "[Content_Types].xml", data, length);
-    free(data);
     if (err != CXLSB_OK) return err;
     
     err = cxlsb_rels_gen_root(&data, &length);
     if (err != CXLSB_OK) return err;
     err = cxlsb_container_add_entry(writer->container, "_rels/.rels", data, length);
-    free(data);
     if (err != CXLSB_OK) return err;
     
     err = cxlsb_xml_gen_app(writer->sheet_count, &data, &length);
     if (err != CXLSB_OK) return err;
     err = cxlsb_container_add_entry(writer->container, "docProps/app.xml", data, length);
-    free(data);
     if (err != CXLSB_OK) return err;
     
     err = cxlsb_xml_gen_core(&data, &length);
     if (err != CXLSB_OK) return err;
     err = cxlsb_container_add_entry(writer->container, "docProps/core.xml", data, length);
-    free(data);
     if (err != CXLSB_OK) return err;
     
     err = cxlsb_workbook_writer_to_bytes(writer->workbook, &data, &length);
     if (err != CXLSB_OK) return err;
     err = cxlsb_container_add_entry(writer->container, "xl/workbook.bin", data, length);
-    free(data);
     if (err != CXLSB_OK) return err;
     
     err = cxlsb_styles_registry_to_bytes(writer->styles, &data, &length);
     if (err != CXLSB_OK) return err;
     err = cxlsb_container_add_entry(writer->container, "xl/styles.bin", data, length);
-    free(data);
     if (err != CXLSB_OK) return err;
     
     err = cxlsb_xml_gen_theme(&data, &length);
     if (err != CXLSB_OK) return err;
     err = cxlsb_container_add_entry(writer->container, "xl/theme/theme1.xml", data, length);
-    free(data);
     if (err != CXLSB_OK) return err;
     
     err = cxlsb_rels_gen_workbook(writer->sheet_count, cxlsb_sst_table_get_count(writer->sst) > 0, &data, &length);
     if (err != CXLSB_OK) return err;
     err = cxlsb_container_add_entry(writer->container, "xl/_rels/workbook.bin.rels", data, length);
-    free(data);
     if (err != CXLSB_OK) return err;
     
     if (cxlsb_sst_table_get_count(writer->sst) > 0) {
@@ -226,7 +217,6 @@ static cxlsb_error_t write_container_structure(cxlsb_writer_t* writer) {
         memcpy(data, cxlsb_biff12_writer_get_buffer(biff12), length);
         
         err = cxlsb_container_add_entry(writer->container, "xl/sharedStrings.bin", data, length);
-        free(data);
         cxlsb_biff12_writer_destroy(biff12);
         if (err != CXLSB_OK) return err;
     }

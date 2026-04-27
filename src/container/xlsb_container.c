@@ -42,10 +42,10 @@ cxlsb_error_t cxlsb_container_add_entry(cxlsb_container_t* container,
     if (container == NULL || name == NULL || data == NULL) return CXLSB_ERR_NULL_PTR;
     if (!container->is_open || container->zip_handle == NULL) return CXLSB_ERR_ZIP_OPEN_FAILED;
     
-    zip_source_t* source = zip_source_buffer(container->zip_handle, data, length, 0);
+    zip_source_t* source = zip_source_buffer(container->zip_handle, data, length, 1);
     if (source == NULL) return CXLSB_ERR_ZIP_ADD_FAILED;
     
-    int64_t index = zip_file_add(container->zip_handle, name, source, 0);
+    int64_t index = zip_file_add(container->zip_handle, name, source, ZIP_FL_ENC_UTF_8);
     if (index < 0) {
         zip_source_free(source);
         return CXLSB_ERR_ZIP_ADD_FAILED;

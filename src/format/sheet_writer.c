@@ -27,6 +27,38 @@ void cxlsb_sheet_writer_destroy(cxlsb_sheet_writer_t* writer) {
     }
 }
 
+static cxlsb_error_t write_ws_views(cxlsb_biff12_writer_t* biff12) {
+    cxlsb_biff12_writer_write_empty_record(biff12, BIFF12_BRT_BEGIN_WS_VIEWS);
+    
+    cxlsb_biff12_writer_write_record_header(biff12, BIFF12_BRT_BEGIN_WS_VIEW, 30);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 1);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 6);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 6);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 7);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 7);
+    cxlsb_buffer_writer_write_byte(biff12->buffer, 0);
+    
+    cxlsb_biff12_writer_write_record_header(biff12, BIFF12_BRT_SEL, 36);
+    for (int i = 0; i < 9; i++) cxlsb_buffer_writer_write_int(biff12->buffer, 0);
+    
+    cxlsb_biff12_writer_write_empty_record(biff12, BIFF12_BRT_END_WS_VIEW);
+    cxlsb_biff12_writer_write_empty_record(biff12, BIFF12_BRT_END_WS_VIEWS);
+    return CXLSB_OK;
+}
+
+static cxlsb_error_t write_ws_fmt_info(cxlsb_biff12_writer_t* biff12) {
+    cxlsb_biff12_writer_write_record_header(biff12, BIFF12_BRT_WS_FMT_INFO, 12);
+    cxlsb_buffer_writer_write_short(biff12->buffer, 9);
+    cxlsb_buffer_writer_write_short(biff12->buffer, 0);
+    cxlsb_buffer_writer_write_int(biff12->buffer, 8);
+    return CXLSB_OK;
+}
+
 static cxlsb_error_t write_sheet_data(cxlsb_sheet_writer_t* writer, cxlsb_cell_supplier_fn supplier, void* user_data, int start_row, int row_count, int col_count) {
     cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_BEGIN_SHEET_DATA);
     
@@ -80,11 +112,21 @@ cxlsb_error_t cxlsb_sheet_writer_write_sheet(cxlsb_sheet_writer_t* writer, cxlsb
     cxlsb_biff12_writer_reset(writer->biff12);
     
     cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_BEGIN_SHEET);
-    cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_WS_PROP);
+    
+    cxlsb_biff12_writer_write_record_header(writer->biff12, BIFF12_BRT_WS_PROP, 23);
+    cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
+    for (int i = 0; i < 8; i++) cxlsb_buffer_writer_write_byte(writer->biff12->buffer, 0xFF);
+    cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
+    
+    uint32_t last_row = row_count > 0 ? row_count - 1 : 0;
+    uint32_t last_col = col_count > 0 ? col_count - 1 : 0;
+    cxlsb_biff12_writer_write_ws_dim(writer->biff12, 0, last_row, 0, last_col);
+    
+    write_ws_views(writer->biff12);
+    write_ws_fmt_info(writer->biff12);
     
     write_sheet_data(writer, supplier, user_data, 0, row_count, col_count);
     
-    cxlsb_biff12_writer_write_ws_dim(writer->biff12, 0, 0, row_count > 0 ? row_count - 1 : 0, col_count > 0 ? col_count - 1 : 0);
     cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_END_SHEET);
     
     size_t len = cxlsb_biff12_writer_get_length(writer->biff12);
@@ -105,7 +147,14 @@ cxlsb_error_t cxlsb_sheet_writer_start_streaming(cxlsb_sheet_writer_t* writer, i
     cxlsb_biff12_writer_reset(writer->biff12);
     
     cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_BEGIN_SHEET);
-    cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_WS_PROP);
+    
+    cxlsb_biff12_writer_write_record_header(writer->biff12, BIFF12_BRT_WS_PROP, 23);
+    cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
+    for (int i = 0; i < 8; i++) cxlsb_buffer_writer_write_byte(writer->biff12->buffer, 0xFF);
+    cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
+    
+    write_ws_views(writer->biff12);
+    write_ws_fmt_info(writer->biff12);
     return CXLSB_OK;
 }
 
@@ -117,7 +166,9 @@ cxlsb_error_t cxlsb_sheet_writer_append_rows(cxlsb_sheet_writer_t* writer, cxlsb
 cxlsb_error_t cxlsb_sheet_writer_finalize_streaming(cxlsb_sheet_writer_t* writer, int row_count, int col_count, uint8_t** out_data, size_t* out_length) {
     if (!writer->streaming_mode) return CXLSB_ERR_INVALID_ARG;
     
-    cxlsb_biff12_writer_write_ws_dim(writer->biff12, 0, 0, row_count > 0 ? row_count - 1 : 0, col_count > 0 ? col_count - 1 : 0);
+    uint32_t last_row = row_count > 0 ? row_count - 1 : 0;
+    uint32_t last_col = col_count > 0 ? col_count - 1 : 0;
+    cxlsb_biff12_writer_write_ws_dim(writer->biff12, 0, last_row, 0, last_col);
     cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_END_SHEET);
     writer->streaming_mode = false;
     

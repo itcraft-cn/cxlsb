@@ -141,15 +141,22 @@ cxlsb_error_t cxlsb_biff12_writer_write_cell_blank(cxlsb_biff12_writer_t* writer
 }
 
 cxlsb_error_t cxlsb_biff12_writer_write_row_header(cxlsb_biff12_writer_t* writer,
-                                                    uint32_t row, 
-                                                    uint32_t first_col,
-                                                    uint32_t last_col) {
-    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_ROW_HDR, 13);
+                                                     uint32_t row, 
+                                                     uint32_t first_col,
+                                                     uint32_t last_col) {
+    uint32_t record_size = 4 + 4 + 2 + 3 + 4 + 8;
+    cxlsb_error_t err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_ROW_HDR, record_size);
     if (err != CXLSB_OK) return err;
+    
     cxlsb_buffer_writer_write_int(writer->buffer, row);
+    cxlsb_buffer_writer_write_int(writer->buffer, 0);
+    cxlsb_buffer_writer_write_short(writer->buffer, 270);
+    cxlsb_buffer_writer_write_byte(writer->buffer, 0);
+    cxlsb_buffer_writer_write_byte(writer->buffer, 0);
+    cxlsb_buffer_writer_write_byte(writer->buffer, 0);
+    cxlsb_buffer_writer_write_int(writer->buffer, 1);
     cxlsb_buffer_writer_write_int(writer->buffer, first_col);
-    cxlsb_buffer_writer_write_int(writer->buffer, last_col);
-    return cxlsb_buffer_writer_write_byte(writer->buffer, 0);
+    return cxlsb_buffer_writer_write_int(writer->buffer, last_col);
 }
 
 cxlsb_error_t cxlsb_biff12_writer_write_ws_dim(cxlsb_biff12_writer_t* writer,
