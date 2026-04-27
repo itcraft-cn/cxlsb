@@ -93,6 +93,7 @@ cxlsb_error_t cxlsb_reader_for_each_row(cxlsb_reader_t* reader, int sheet_index,
     uint32_t current_row = 0;
     int col_count = 0;
     cxlsb_cell_data_t* cells = NULL;
+    bool cells_ready = false;
     
     while (cxlsb_buffer_reader_has_remaining(sheet_stream, 2)) {
         uint32_t type, size;
@@ -105,26 +106,64 @@ cxlsb_error_t cxlsb_reader_for_each_row(cxlsb_reader_t* reader, int sheet_index,
         cxlsb_varint_decode_at(buf + pos, &size, &bytes_read);
         cxlsb_buffer_reader_set_position(sheet_stream, pos + bytes_read);
         
-        if (type == BIFF12_BRT_END_SHEET_DATA) break;
+        if (type == BIFF12_BRT_END_SHEET_DATA) {
+            if (cells_ready && cells != NULL && col_count > 0) {
+                handler(current_row, col_count, cells, user_data);
+                for (int i = 0; i < col_count; i++) {
+                    if (cells[i].type == CXLSB_CELL_TEXT && cells[i].value.text != NULL) {
+                        free((void*)cells[i].value.text);
+                    }
+                }
+                free(cells);
+                cells = NULL;
+            }
+            break;
+        }
         if (type == BIFF12_BRT_BEGIN_SHEET_DATA) continue;
+        
         if (type == BIFF12_BRT_ROW_HDR) {
+            if (cells_ready && cells != NULL && col_count > 0) {
+                handler(current_row, col_count, cells, user_data);
+                for (int i = 0; i < col_count; i++) {
+                    if (cells[i].type == CXLSB_CELL_TEXT && cells[i].value.text != NULL) {
+                        free((void*)cells[i].value.text);
+                    }
+                }
+                free(cells);
+            }
+            cells_ready = false;
+            
             current_row = cxlsb_buffer_reader_read_int(sheet_stream);
-            uint32_t first_col = cxlsb_buffer_reader_read_int(sheet_stream);
-            uint32_t last_col = cxlsb_buffer_reader_read_int(sheet_stream);
-            cxlsb_buffer_reader_read_byte(sheet_stream);
+            cxlsb_buffer_reader_read_int(sheet_stream);  // ixfe
+            cxlsb_buffer_reader_read_short(sheet_stream); // miyRw
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // flags byte 1
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // flags byte 2
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // flags byte 3
+            uint32_t ccolspan = cxlsb_buffer_reader_read_int(sheet_stream);
+            uint32_t first_col = 0, last_col = 0;
+            if (ccolspan > 0) {
+                first_col = cxlsb_buffer_reader_read_int(sheet_stream);
+                last_col = cxlsb_buffer_reader_read_int(sheet_stream);
+            }
             col_count = last_col - first_col + 1;
             cells = (cxlsb_cell_data_t*)malloc(sizeof(cxlsb_cell_data_t) * col_count);
             for (int i = 0; i < col_count; i++) cells[i] = cxlsb_cell_blank();
         } else if (type == BIFF12_BRT_CELL_REAL && cells != NULL) {
-            cxlsb_buffer_reader_read_int(sheet_stream);
+            cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
-            cxlsb_buffer_reader_read_int(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 1
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 2
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 3
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // flags
             double val = cxlsb_buffer_reader_read_double(sheet_stream);
             if (col < (uint32_t)col_count) cells[col] = cxlsb_cell_number(val);
         } else if (type == BIFF12_BRT_CELL_ISST && cells != NULL) {
-            cxlsb_buffer_reader_read_int(sheet_stream);
+            cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
-            cxlsb_buffer_reader_read_int(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 1
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 2
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 3
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // flags
             uint32_t sst_idx = cxlsb_buffer_reader_read_int(sheet_stream);
             if (col < (uint32_t)col_count && reader->sst != NULL) {
                 const char* str = cxlsb_sst_table_get_string(reader->sst, sst_idx);
@@ -135,10 +174,13 @@ cxlsb_error_t cxlsb_reader_for_each_row(cxlsb_reader_t* reader, int sheet_index,
                 }
             }
         } else if (type == BIFF12_BRT_CELL_ST && cells != NULL) {
-            cxlsb_buffer_reader_read_int(sheet_stream);
+            cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
-            cxlsb_buffer_reader_read_int(sheet_stream);
-            cxlsb_buffer_reader_read_byte(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 1
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 2
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 3
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // flags
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // encoding
             uint32_t str_len = cxlsb_buffer_reader_read_int(sheet_stream);
             if (str_len > 0) {
                 size_t utf16_len = str_len * 2;
@@ -151,28 +193,18 @@ cxlsb_error_t cxlsb_reader_for_each_row(cxlsb_reader_t* reader, int sheet_index,
                 }
             }
         } else if (type == BIFF12_BRT_CELL_BOOL && cells != NULL) {
-            cxlsb_buffer_reader_read_int(sheet_stream);
+            cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
-            cxlsb_buffer_reader_read_int(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 1
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 2
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // xf byte 3
+            cxlsb_buffer_reader_read_byte(sheet_stream);  // flags
             uint8_t val = cxlsb_buffer_reader_read_byte(sheet_stream);
             if (col < (uint32_t)col_count) cells[col] = cxlsb_cell_bool(val != 0);
         } else {
             cxlsb_buffer_reader_set_position(sheet_stream, cxlsb_buffer_reader_get_position(sheet_stream) + size);
         }
-        
-        if (type == BIFF12_BRT_ROW_HDR || type == BIFF12_BRT_END_SHEET_DATA) {
-            if (cells != NULL && col_count > 0) {
-                handler(current_row, col_count, cells, user_data);
-                for (int i = 0; i < col_count; i++) {
-                    if (cells[i].type == CXLSB_CELL_TEXT && cells[i].value.text != NULL) {
-                        free((void*)cells[i].value.text);
-                    }
-                }
-                free(cells);
-                cells = NULL;
-            }
-            row_count++;
-        }
+        row_count++;
     }
     
     cxlsb_buffer_reader_destroy(sheet_stream);
