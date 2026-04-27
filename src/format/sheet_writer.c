@@ -67,11 +67,15 @@ static cxlsb_error_t write_ws_fmt_info(cxlsb_biff12_writer_t* biff12) {
 static cxlsb_error_t write_sheet_data(cxlsb_sheet_writer_t* writer, cxlsb_cell_supplier_fn supplier, void* user_data, int start_row, int row_count, int col_count) {
     cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_BEGIN_SHEET_DATA);
     
+    cxlsb_cell_data_t* row_cache = (cxlsb_cell_data_t*)malloc(col_count * sizeof(cxlsb_cell_data_t));
+    if (row_cache == NULL) return CXLSB_ERR_NO_MEMORY;
+    
     for (int row = start_row; row < start_row + row_count; row++) {
         int first_col = -1, last_col = -1;
+        
         for (int col = 0; col < col_count; col++) {
-            cxlsb_cell_data_t cell = supplier(row, col, user_data);
-            if (cell.type != CXLSB_CELL_BLANK) {
+            row_cache[col] = supplier(row, col, user_data);
+            if (row_cache[col].type != CXLSB_CELL_BLANK) {
                 if (first_col < 0) first_col = col;
                 last_col = col;
             }
@@ -80,26 +84,26 @@ static cxlsb_error_t write_sheet_data(cxlsb_sheet_writer_t* writer, cxlsb_cell_s
         if (first_col >= 0) {
             cxlsb_biff12_writer_write_row_header(writer->biff12, row, first_col, last_col);
             for (int col = first_col; col <= last_col; col++) {
-                cxlsb_cell_data_t cell = supplier(row, col, user_data);
+                cxlsb_cell_data_t* cell = &row_cache[col];
                 uint32_t xf_id = 0;
                 
-                switch (cell.type) {
+                switch (cell->type) {
                     case CXLSB_CELL_NUMBER:
-                        cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell.value.number, xf_id);
+                        cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell->value.number, xf_id);
                         break;
                     case CXLSB_CELL_TEXT:
-                        if (writer->sst != NULL && strlen(cell.value.text) > 3) {
-                            uint32_t sst_idx = cxlsb_sst_table_add_string(writer->sst, cell.value.text);
+                        if (writer->sst != NULL && strlen(cell->value.text) > CXLSB_SST_INLINE_THRESHOLD) {
+                            uint32_t sst_idx = cxlsb_sst_table_add_string(writer->sst, cell->value.text);
                             cxlsb_biff12_writer_write_cell_isst(writer->biff12, row, col, sst_idx, xf_id);
                         } else {
-                            cxlsb_biff12_writer_write_cell_st(writer->biff12, row, col, cell.value.text, xf_id);
+                            cxlsb_biff12_writer_write_cell_st(writer->biff12, row, col, cell->value.text, xf_id);
                         }
                         break;
                     case CXLSB_CELL_BOOL:
-                        cxlsb_biff12_writer_write_cell_bool(writer->biff12, row, col, cell.value.boolean, xf_id);
+                        cxlsb_biff12_writer_write_cell_bool(writer->biff12, row, col, cell->value.boolean, xf_id);
                         break;
                     case CXLSB_CELL_DATE:
-                        cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell.value.number, xf_id);
+                        cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell->value.number, xf_id);
                         break;
                     default:
                         cxlsb_biff12_writer_write_cell_blank(writer->biff12, row, col, xf_id);
@@ -110,6 +114,8 @@ static cxlsb_error_t write_sheet_data(cxlsb_sheet_writer_t* writer, cxlsb_cell_s
         if (row > writer->max_row) writer->max_row = row;
         if (col_count > writer->max_col) writer->max_col = col_count - 1;
     }
+    
+    free(row_cache);
     return cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_END_SHEET_DATA);
 }
 
@@ -171,11 +177,15 @@ cxlsb_error_t cxlsb_sheet_writer_start_streaming(cxlsb_sheet_writer_t* writer, i
 }
 
 static cxlsb_error_t write_rows_only(cxlsb_sheet_writer_t* writer, cxlsb_cell_supplier_fn supplier, void* user_data, int start_row, int row_count, int col_count) {
+    cxlsb_cell_data_t* row_cache = (cxlsb_cell_data_t*)malloc(col_count * sizeof(cxlsb_cell_data_t));
+    if (row_cache == NULL) return CXLSB_ERR_NO_MEMORY;
+    
     for (int row = start_row; row < start_row + row_count; row++) {
         int first_col = -1, last_col = -1;
+        
         for (int col = 0; col < col_count; col++) {
-            cxlsb_cell_data_t cell = supplier(row, col, user_data);
-            if (cell.type != CXLSB_CELL_BLANK) {
+            row_cache[col] = supplier(row, col, user_data);
+            if (row_cache[col].type != CXLSB_CELL_BLANK) {
                 if (first_col < 0) first_col = col;
                 last_col = col;
             }
@@ -184,26 +194,26 @@ static cxlsb_error_t write_rows_only(cxlsb_sheet_writer_t* writer, cxlsb_cell_su
         if (first_col >= 0) {
             cxlsb_biff12_writer_write_row_header(writer->biff12, row, first_col, last_col);
             for (int col = first_col; col <= last_col; col++) {
-                cxlsb_cell_data_t cell = supplier(row, col, user_data);
+                cxlsb_cell_data_t* cell = &row_cache[col];
                 uint32_t xf_id = 0;
                 
-                switch (cell.type) {
+                switch (cell->type) {
                     case CXLSB_CELL_NUMBER:
-                        cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell.value.number, xf_id);
+                        cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell->value.number, xf_id);
                         break;
                     case CXLSB_CELL_TEXT:
-                        if (writer->sst != NULL && strlen(cell.value.text) > 3) {
-                            uint32_t sst_idx = cxlsb_sst_table_add_string(writer->sst, cell.value.text);
+                        if (writer->sst != NULL && strlen(cell->value.text) > CXLSB_SST_INLINE_THRESHOLD) {
+                            uint32_t sst_idx = cxlsb_sst_table_add_string(writer->sst, cell->value.text);
                             cxlsb_biff12_writer_write_cell_isst(writer->biff12, row, col, sst_idx, xf_id);
                         } else {
-                            cxlsb_biff12_writer_write_cell_st(writer->biff12, row, col, cell.value.text, xf_id);
+                            cxlsb_biff12_writer_write_cell_st(writer->biff12, row, col, cell->value.text, xf_id);
                         }
                         break;
                     case CXLSB_CELL_BOOL:
-                        cxlsb_biff12_writer_write_cell_bool(writer->biff12, row, col, cell.value.boolean, xf_id);
+                        cxlsb_biff12_writer_write_cell_bool(writer->biff12, row, col, cell->value.boolean, xf_id);
                         break;
                     case CXLSB_CELL_DATE:
-                        cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell.value.number, xf_id);
+                        cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell->value.number, xf_id);
                         break;
                     default:
                         cxlsb_biff12_writer_write_cell_blank(writer->biff12, row, col, xf_id);
@@ -214,6 +224,8 @@ static cxlsb_error_t write_rows_only(cxlsb_sheet_writer_t* writer, cxlsb_cell_su
         if (row > writer->max_row) writer->max_row = row;
         if (col_count > writer->max_col) writer->max_col = col_count - 1;
     }
+    
+    free(row_cache);
     return CXLSB_OK;
 }
 

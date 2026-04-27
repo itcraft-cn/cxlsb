@@ -419,7 +419,16 @@ static uint8_t* generate_filled_sheet(cxlsb_template_filler_t* filler,
         min_col = result->start_col;
     }
     
-    uint8_t* sheet = malloc(65536);
+    int num_rows = max_row - start_row + 1;
+    int num_cols = max_col - min_col + 1;
+    size_t estimated_size = 100 + num_rows * (50 + num_cols * 20) + parser->merge_count * 20;
+    if (estimated_size < 1024) estimated_size = 1024;
+    
+    uint8_t* sheet = malloc(estimated_size);
+    if (!sheet) {
+        *out_len = 0;
+        return NULL;
+    }
     int pos = 0;
     
     uint8_t begin_sheet[] = {0x81, 0x01, 0x00};
@@ -559,7 +568,22 @@ cxlsb_error_t cxlsb_template_filler_save(cxlsb_template_filler_t* filler,
         copy_entry(filler->template_zip, out, static_entries[i]);
     }
     
-    uint8_t new_sst[10240];
+    uint32_t total_cnt = cxlsb_sst_table_get_count(filler->sst);
+    size_t sst_estimated = 11 + 3;
+    for (uint32_t i = 0; i < total_cnt; i++) {
+        const char* str = cxlsb_sst_table_get_string(filler->sst, i);
+        if (str) {
+            size_t utf16_len = cxlsb_utf16le_byte_length(str);
+            sst_estimated += 10 + 1 + 4 + utf16_len;
+        }
+    }
+    if (sst_estimated < 1024) sst_estimated = 1024;
+    
+    uint8_t* new_sst = malloc(sst_estimated);
+    if (!new_sst) {
+        zip_close(out);
+        return CXLSB_ERR_NO_MEMORY;
+    }
     int sst_pos = 0;
     
     uint8_t sst_begin[] = {0x9F, 0x01, 0x08};
@@ -567,7 +591,6 @@ cxlsb_error_t cxlsb_template_filler_save(cxlsb_template_filler_t* filler,
     sst_pos += 3;
     
     uint32_t total_ref = cxlsb_sst_table_get_total_count(filler->sst);
-    uint32_t total_cnt = cxlsb_sst_table_get_count(filler->sst);
     memcpy(new_sst + sst_pos, &total_ref, 4);
     memcpy(new_sst + sst_pos + 4, &total_cnt, 4);
     sst_pos += 8;
@@ -580,7 +603,7 @@ cxlsb_error_t cxlsb_template_filler_save(cxlsb_template_filler_t* filler,
     memcpy(new_sst + sst_pos, sst_end, 3);
     sst_pos += 3;
     
-    zip_source_t* sst_src = zip_source_buffer(out, new_sst, sst_pos, 0);
+    zip_source_t* sst_src = zip_source_buffer(out, new_sst, sst_pos, 1);
     zip_file_add(out, "xl/sharedStrings.bin", sst_src, ZIP_FL_ENC_UTF_8);
     
     for (int i = 0; i < filler->sheet_count; i++) {
