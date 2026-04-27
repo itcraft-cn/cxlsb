@@ -1,16 +1,61 @@
-# {project.title placeholder}
+# cxlsb
 
-## {project.desc placeholder}
+## 项目概述
 
-## {project.other1 placeholder}
+ANSI C 实现的 XLSB (Excel Binary Workbook) 格式读写库，移植自 Java jxlsb 项目。
 
-## {project.other2 placeholder}
+## 功能特性
 
-## {project.other3 placeholder}
+- **Writer API**: write_batch（一次性写入）、streaming（流式追加）
+- **Reader API**: for_each_row（逐行读取）、pagination（分页读取）
+- **Template Filler**: fill_marker（${data}标记填充）、fill_index（指定位置填充）
+- **SST 处理**: 加载、修改、保存共享字符串表
+- **跨平台**: Linux + Windows 支持
 
-## ...
+## 项目结构
 
-## {project.otherN placeholder}
+```
+cxlsb/
+├── include/cxlsb/     # 公共 API 头文件
+│   ├── types.h        # 核心类型定义
+│   ├── error_codes.h  # 错误码定义
+│   ├── cell_data.h    # 单元格数据 API
+│   ├── xlsb_writer.h  # 写入器 API
+│   ├── xlsb_reader.h  # 读取器 API
+│   └── template_filler.h  # 模板填充 API
+├── src/
+│   ├── api/           # API 实现
+│   ├── format/        # BIFF12 格式处理
+│   ├── container/     # ZIP 容器处理
+│   ├── io/            # 缓冲读写
+│   └── util/          # 工具函数
+├── tests/             # 测试文件
+└── tools/             # 工具程序
+```
+
+## 构建与测试
+
+### 编译命令
+
+```bash
+# 编译测试
+gcc tests/test_xxx.c \
+  src/api/*.c src/format/*.c src/container/*.c src/io/*.c src/util/*.c \
+  -Iinclude -Isrc $(pkg-config --libs libzip) -o /tmp/test_xxx
+
+# 运行测试
+tests/run_tests.sh
+```
+
+### 测试覆盖
+
+- 12 个测试全部通过
+- 覆盖：write/read/streaming/template_fill/mixed_types/pagination
+
+## 依赖
+
+- libzip (ZIP 容器处理)
+- C99 标准
 
 ## AI guide
 
@@ -43,3 +88,31 @@
 授权读取：/disk2/helly_data/code/markdown/self-ai-spec/lang-spec/spec.ansi_c.md
 
 Read /disk2/helly_data/code/markdown/self-ai-spec/lang-spec/spec.ansi_c.md
+
+#### cxlsb 特定规范
+
+1. **命名约定**
+   - 公共 API: `cxlsb_` 前缀（如 `cxlsb_writer_create`）
+   - 内部函数: 无前缀，static 声明
+   - 结构体: `cxlsb_xxx_t` 类型别名
+
+2. **错误处理**
+   - 使用 `cxlsb_error_t` 枚举返回错误码
+   - 成功返回 `CXLSB_OK` (0)
+   - 提供 `cxlsb_error_string()` 获取错误描述
+
+3. **内存管理**
+   - API 使用 create/destroy 模式
+   - 所有分配检查 NULL
+   - 使用 valgrind 检测内存泄漏
+
+4. **BIFF12 格式**
+   - Record type: varint 编码
+   - Record size: varint 编码
+   - Cell type: 0=Blank, 4=Real, 7=Isst, 9=Bool
+
+### 参考资源
+
+- Java 参考实现: ~/code/java/jxlsb
+- 模板文件: tests/resources/template/demo_template.xlsb
+- BIFF12 规范: MS-XLSB 文档
