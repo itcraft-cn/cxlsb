@@ -1,8 +1,11 @@
-#include "test_framework.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <zip.h>
+#include <string.h>
+#include <unistd.h>
 #include "../include/cxlsb/xlsb_writer.h"
 #include "../include/cxlsb/xlsb_reader.h"
 #include "../include/cxlsb/cell_data.h"
-#include <unistd.h>
 
 static const char* TEST_FILE = "/tmp/test_streaming.xlsb";
 
@@ -21,6 +24,18 @@ static cxlsb_cell_data_t order_supplier(int row, int col, void* user_data) {
         case 2: return cxlsb_cell_number(orders[idx].amount);
         default: return cxlsb_cell_blank();
     }
+}
+
+static cxlsb_cell_data_t batch_supplier(int row, int col, void* ud) {
+    (void)ud;
+    return cxlsb_cell_number(row * col);
+}
+
+static cxlsb_cell_data_t footer_supplier(int row, int col, void* ud) {
+    (void)ud;
+    (void)row;
+    (void)col;
+    return cxlsb_cell_text("End");
 }
 
 int main(void) {
@@ -94,10 +109,6 @@ int main(void) {
         cxlsb_writer_t* writer = cxlsb_writer_create(TEST_FILE);
         
         // Sheet1: batch mode
-        cxlsb_cell_data_t batch_supplier(int row, int col, void* ud) {
-            (void)ud;
-            return cxlsb_cell_number(row * col);
-        }
         cxlsb_writer_write_batch(writer, "Summary", batch_supplier, NULL, 50, 5);
         
         // Sheet2: streaming mode
@@ -112,10 +123,6 @@ int main(void) {
         cxlsb_writer_end_sheet(writer);
         
         // Sheet3: batch mode again
-        cxlsb_cell_data_t footer_supplier(int row, int col, void* ud) {
-            (void)ud;
-            return cxlsb_cell_text("End");
-        }
         cxlsb_writer_write_batch(writer, "Footer", footer_supplier, NULL, 10, 2);
         
         cxlsb_writer_destroy(writer);
