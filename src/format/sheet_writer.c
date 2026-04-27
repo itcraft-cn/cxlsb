@@ -30,21 +30,24 @@ void cxlsb_sheet_writer_destroy(cxlsb_sheet_writer_t* writer) {
 static cxlsb_error_t write_ws_views(cxlsb_biff12_writer_t* biff12) {
     cxlsb_biff12_writer_write_empty_record(biff12, BIFF12_BRT_BEGIN_WS_VIEWS);
     
-    cxlsb_biff12_writer_write_record_header(biff12, BIFF12_BRT_BEGIN_WS_VIEW, 41);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 0);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 1);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 6);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 6);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 7);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 7);
-    cxlsb_buffer_writer_write_byte(biff12->buffer, 0);
+    cxlsb_biff12_writer_write_record_header(biff12, BIFF12_BRT_BEGIN_WS_VIEW, 30);
+    static const uint8_t ws_view_data[] = {
+        0xDC, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x40, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    cxlsb_buffer_writer_write_bytes(biff12->buffer, ws_view_data, sizeof(ws_view_data));
     
     cxlsb_biff12_writer_write_record_header(biff12, BIFF12_BRT_SEL, 36);
-    for (int i = 0; i < 9; i++) cxlsb_buffer_writer_write_int(biff12->buffer, 0);
+    static const uint8_t sel_data[] = {
+        0x03, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00,
+        0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00,
+        0x06, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+        0x07, 0x00, 0x00, 0x00
+    };
+    cxlsb_buffer_writer_write_bytes(biff12->buffer, sel_data, sizeof(sel_data));
     
     cxlsb_biff12_writer_write_empty_record(biff12, BIFF12_BRT_END_WS_VIEW);
     cxlsb_biff12_writer_write_empty_record(biff12, BIFF12_BRT_END_WS_VIEWS);
@@ -52,10 +55,12 @@ static cxlsb_error_t write_ws_views(cxlsb_biff12_writer_t* biff12) {
 }
 
 static cxlsb_error_t write_ws_fmt_info(cxlsb_biff12_writer_t* biff12) {
-    cxlsb_biff12_writer_write_record_header(biff12, BIFF12_BRT_WS_FMT_INFO, 8);
-    cxlsb_buffer_writer_write_short(biff12->buffer, 9);
-    cxlsb_buffer_writer_write_short(biff12->buffer, 0);
-    cxlsb_buffer_writer_write_int(biff12->buffer, 8);
+    cxlsb_biff12_writer_write_record_header(biff12, BIFF12_BRT_WS_FMT_INFO, 12);
+    static const uint8_t fmt_info_data[] = {
+        0x00, 0x09, 0x00, 0x00, 0x08, 0x00, 0x0E, 0x01,
+        0x00, 0x00, 0x00, 0x00
+    };
+    cxlsb_buffer_writer_write_bytes(biff12->buffer, fmt_info_data, sizeof(fmt_info_data));
     return CXLSB_OK;
 }
 
@@ -113,10 +118,13 @@ cxlsb_error_t cxlsb_sheet_writer_write_sheet(cxlsb_sheet_writer_t* writer, cxlsb
     
     cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_BEGIN_SHEET);
     
-    cxlsb_biff12_writer_write_record_header(writer->biff12, BIFF12_BRT_WS_PROP, 16);
-    cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
-    for (int i = 0; i < 8; i++) cxlsb_buffer_writer_write_byte(writer->biff12->buffer, 0xFF);
-    cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
+    cxlsb_biff12_writer_write_record_header(writer->biff12, BIFF12_BRT_WS_PROP, 23);
+    static const uint8_t ws_prop_data[] = {
+        0xC9, 0x04, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00
+    };
+    cxlsb_buffer_writer_write_bytes(writer->biff12->buffer, ws_prop_data, sizeof(ws_prop_data));
     
     uint32_t last_row = row_count > 0 ? row_count - 1 : 0;
     uint32_t last_col = col_count > 0 ? col_count - 1 : 0;
@@ -148,10 +156,13 @@ cxlsb_error_t cxlsb_sheet_writer_start_streaming(cxlsb_sheet_writer_t* writer, i
     
     cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_BEGIN_SHEET);
     
-    cxlsb_biff12_writer_write_record_header(writer->biff12, BIFF12_BRT_WS_PROP, 16);
-    cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
-    for (int i = 0; i < 8; i++) cxlsb_buffer_writer_write_byte(writer->biff12->buffer, 0xFF);
-    cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
+    cxlsb_biff12_writer_write_record_header(writer->biff12, BIFF12_BRT_WS_PROP, 23);
+    static const uint8_t ws_prop_data[] = {
+        0xC9, 0x04, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00
+    };
+    cxlsb_buffer_writer_write_bytes(writer->biff12->buffer, ws_prop_data, sizeof(ws_prop_data));
     
     write_ws_views(writer->biff12);
     write_ws_fmt_info(writer->biff12);
