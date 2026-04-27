@@ -18,4 +18,10 @@ cxlsb_error_t cxlsb_writer_end_sheet(cxlsb_writer_t* writer);
 int cxlsb_writer_get_sheet_count(cxlsb_writer_t* writer);
 cxlsb_error_t cxlsb_writer_close(cxlsb_writer_t* writer);
 
+typedef struct cxlsb_sheet_data_entry {
+    uint8_t* data;
+    size_t length;
+    char* name;
+} cxlsb_sheet_data_entry_t;
+
 #endif /* CXLSB_XLSB_WRITER_H */

@@ -11,6 +11,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define MAX_SHEETS 256
+
 struct cxlsb_writer {
     cxlsb_container_t* container;
     cxlsb_sst_table_t* sst;
@@ -23,6 +25,7 @@ struct cxlsb_writer {
     int current_col_count;
     int current_row_count;
     bool streaming_active;
+    cxlsb_sheet_data_entry_t sheet_data_cache[MAX_SHEETS];
 };
 
 cxlsb_writer_t* cxlsb_writer_create(const char* path) {
@@ -30,6 +33,8 @@ cxlsb_writer_t* cxlsb_writer_create(const char* path) {
     
     cxlsb_writer_t* writer = (cxlsb_writer_t*)malloc(sizeof(cxlsb_writer_t));
     if (writer == NULL) return NULL;
+    
+    memset(writer->sheet_data_cache, 0, sizeof(writer->sheet_data_cache));
     
     writer->container = cxlsb_container_create(path);
     if (writer->container == NULL) { free(writer); return NULL; }
@@ -67,12 +72,17 @@ void cxlsb_writer_destroy(cxlsb_writer_t* writer) {
         if (writer->sst) cxlsb_sst_table_destroy(writer->sst);
         if (writer->container) cxlsb_container_destroy(writer->container);
         if (writer->current_sheet_name) free(writer->current_sheet_name);
+        for (int i = 0; i < writer->sheet_count; i++) {
+            if (writer->sheet_data_cache[i].data) free(writer->sheet_data_cache[i].data);
+            if (writer->sheet_data_cache[i].name) free(writer->sheet_data_cache[i].name);
+        }
         free(writer);
     }
 }
 
 cxlsb_error_t cxlsb_writer_write_batch(cxlsb_writer_t* writer, const char* sheet_name, cxlsb_cell_supplier_fn supplier, void* user_data, int row_count, int col_count) {
     if (writer == NULL || sheet_name == NULL) return CXLSB_ERR_NULL_PTR;
+    if (writer->sheet_count >= MAX_SHEETS) return CXLSB_ERR_INVALID_ARG;
     
     cxlsb_error_t err = cxlsb_workbook_writer_add_sheet(writer->workbook, sheet_name);
     if (err != CXLSB_OK) return err;
@@ -85,8 +95,14 @@ cxlsb_error_t cxlsb_writer_write_batch(cxlsb_writer_t* writer, const char* sheet
     char entry_name[64];
     snprintf(entry_name, sizeof(entry_name), "xl/worksheets/sheet%d.bin", writer->sheet_count + 1);
     err = cxlsb_container_add_entry(writer->container, entry_name, sheet_data, sheet_length);
-    free(sheet_data);
-    if (err != CXLSB_OK) return err;
+    if (err != CXLSB_OK) {
+        free(sheet_data);
+        return err;
+    }
+    
+    writer->sheet_data_cache[writer->sheet_count].data = sheet_data;
+    writer->sheet_data_cache[writer->sheet_count].length = sheet_length;
+    writer->sheet_data_cache[writer->sheet_count].name = strdup(entry_name);
     
     writer->sheet_count++;
     return CXLSB_OK;
