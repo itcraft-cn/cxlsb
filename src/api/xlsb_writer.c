@@ -145,7 +145,6 @@ cxlsb_error_t cxlsb_writer_end_sheet(cxlsb_writer_t* writer) {
     char entry_name[64];
     snprintf(entry_name, sizeof(entry_name), "xl/worksheets/sheet%d.bin", writer->sheet_count + 1);
     err = cxlsb_container_add_entry(writer->container, entry_name, sheet_data, sheet_length);
-    free(sheet_data);
     if (err != CXLSB_OK) return err;
     
     free(writer->current_sheet_name);

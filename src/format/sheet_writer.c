@@ -148,7 +148,7 @@ cxlsb_error_t cxlsb_sheet_writer_start_streaming(cxlsb_sheet_writer_t* writer, i
     
     cxlsb_biff12_writer_write_empty_record(writer->biff12, BIFF12_BRT_BEGIN_SHEET);
     
-    cxlsb_biff12_writer_write_record_header(writer->biff12, BIFF12_BRT_WS_PROP, 23);
+    cxlsb_biff12_writer_write_record_header(writer->biff12, BIFF12_BRT_WS_PROP, 16);
     cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
     for (int i = 0; i < 8; i++) cxlsb_buffer_writer_write_byte(writer->biff12->buffer, 0xFF);
     cxlsb_buffer_writer_write_int(writer->biff12->buffer, 0);
