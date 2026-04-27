@@ -29,6 +29,10 @@ static uint8_t* load_entry(zip_t* zip, const char* name, size_t* len) {
     zip_stat_t st;
     zip_stat(zip, name, 0, &st);
     uint8_t* data = malloc(st.size);
+    if (!data) {
+        zip_fclose(f);
+        return NULL;
+    }
     *len = zip_fread(f, data, st.size);
     zip_fclose(f);
     return data;
@@ -40,6 +44,10 @@ static int copy_entry(zip_t* src, zip_t* dst, const char* name) {
     zip_stat_t st;
     zip_stat(src, name, 0, &st);
     uint8_t* data = malloc(st.size);
+    if (!data) {
+        zip_fclose(f);
+        return -1;
+    }
     zip_fread(f, data, st.size);
     zip_fclose(f);
     zip_source_t* src_buf = zip_source_buffer(dst, data, st.size, 1);
@@ -150,6 +158,7 @@ static void write_ws_dim(uint8_t* buf, int* pos, int r1, int r2, int c1, int c2)
 static size_t write_sst_item(uint8_t* buf, int* pos, const char* str) {
     size_t utf16_len = cxlsb_utf16le_byte_length(str);
     uint8_t* utf16 = malloc(utf16_len);
+    if (!utf16) return 0;
     cxlsb_utf8_to_utf16le(str, utf16, &utf16_len);
     
     size_t item_size = 1 + 4 + utf16_len;
@@ -325,7 +334,13 @@ cxlsb_error_t cxlsb_template_filler_fill_index(cxlsb_template_filler_t* filler,
     result->row_count = row_count;
     result->col_count = col_count;
     result->sst_indices = malloc(row_count * col_count * sizeof(int));
+    if (!result->sst_indices) return CXLSB_ERR_NO_MEMORY;
     result->xf_indices = malloc(row_count * col_count * sizeof(int));
+    if (!result->xf_indices) {
+        free(result->sst_indices);
+        result->sst_indices = NULL;
+        return CXLSB_ERR_NO_MEMORY;
+    }
     
     for (int r = 0; r < row_count; r++) {
         for (int c = 0; c < col_count; c++) {
@@ -376,8 +391,17 @@ static uint8_t* generate_filled_sheet(cxlsb_template_filler_t* filler,
     if (!parser || result->row_count == 0) {
         *out_len = filler->sheet_data_lens[sheet_index];
         uint8_t* data = malloc(*out_len);
+        if (!data) {
+            *out_len = 0;
+            return NULL;
+        }
         memcpy(data, filler->sheet_datas[sheet_index], *out_len);
         return data;
+    }
+    
+    if (parser->cell_count == 0) {
+        *out_len = 0;
+        return NULL;
     }
     
     int start_row = parser->cells[0].row;

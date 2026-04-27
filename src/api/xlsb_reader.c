@@ -149,6 +149,10 @@ cxlsb_error_t cxlsb_reader_for_each_row(cxlsb_reader_t* reader, int sheet_index,
             }
             col_count = last_col - first_col + 1;
             cells = (cxlsb_cell_data_t*)malloc(sizeof(cxlsb_cell_data_t) * col_count);
+            if (!cells) {
+                cxlsb_buffer_reader_destroy(sheet_stream);
+                return CXLSB_ERR_NO_MEMORY;
+            }
             for (int i = 0; i < col_count; i++) cells[i] = cxlsb_cell_blank();
         } else if (type == BIFF12_BRT_CELL_REAL && cells != NULL) {
             cells_ready = true;
