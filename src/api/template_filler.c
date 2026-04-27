@@ -161,7 +161,7 @@ static size_t write_sst_item(uint8_t* buf, int* pos, const char* str) {
     *pos += hlen + slen;
     
     buf[(*pos)++] = 0;
-    uint32_t sl = utf16_len;
+    uint32_t sl = utf16_len / 2;
     memcpy(buf + *pos, &sl, 4);
     *pos += 4;
     
@@ -380,6 +380,21 @@ static uint8_t* generate_filled_sheet(cxlsb_template_filler_t* filler,
         return data;
     }
     
+    int start_row = parser->cells[0].row;
+    int max_row = parser->max_row;
+    if (result->start_row + result->row_count - 1 > max_row) {
+        max_row = result->start_row + result->row_count - 1;
+    }
+    
+    int min_col = parser->cells[0].col;
+    int max_col = parser->max_col;
+    if (result->start_col + result->col_count - 1 > max_col) {
+        max_col = result->start_col + result->col_count - 1;
+    }
+    if (result->start_col < min_col) {
+        min_col = result->start_col;
+    }
+    
     uint8_t* sheet = malloc(65536);
     int pos = 0;
     
@@ -392,23 +407,15 @@ static uint8_t* generate_filled_sheet(cxlsb_template_filler_t* filler,
     memcpy(sheet + pos, wsprop, 26);
     pos += 26;
     
-    int max_row = parser->max_row;
-    if (result->start_row + result->row_count - 1 > max_row) {
-        max_row = result->start_row + result->row_count - 1;
-    }
-    
-    int max_col = parser->max_col;
-    if (result->start_col + result->col_count - 1 > max_col) {
-        max_col = result->start_col + result->col_count - 1;
-    }
-    
-    write_ws_dim(sheet, &pos, 0, max_row, 0, max_col);
+    write_ws_dim(sheet, &pos, start_row, max_row, min_col, max_col);
     
     uint8_t wsview_block[] = {
         0x85, 0x01, 0x00,
-        0x89, 0x01, 0x1E, 0xDC, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00,
-        0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x89, 0x01, 0x1E, 
+        0xDC, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x40, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x98, 0x01, 0x24, 0x03, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00,
         0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
         0x00, 0x06, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x07, 0x00,
@@ -428,30 +435,27 @@ static uint8_t* generate_filled_sheet(cxlsb_template_filler_t* filler,
     memcpy(sheet + pos, begin_sheet_data, 3);
     pos += 3;
     
-    for (int row = 0; row <= max_row; row++) {
+    for (int row = start_row; row <= max_row; row++) {
         write_row_hdr(sheet, &pos, row, max_col + 1);
         
-        for (int i = 0; i < parser->cell_count; i++) {
-            cxlsb_cell_info* ci = &parser->cells[i];
-            if (ci->row == row) {
-                int in_fill_region = (row >= result->start_row && 
-                                      row < result->start_row + result->row_count &&
-                                      ci->col >= result->start_col &&
-                                      ci->col < result->start_col + result->col_count);
-                if (in_fill_region && row != result->start_row) continue;
-                if (in_fill_region && row == result->start_row) continue;
-                
-                if (ci->type == 1) {
-                    int sst_idx = cxlsb_sst_table_find_string(filler->sst, ci->data.text);
-                    if (sst_idx >= 0) {
-                        write_cell_isst(sheet, &pos, ci->col, ci->style_index, sst_idx);
+        // Preserve template cells for rows outside fill region
+        if (row < result->start_row || row >= result->start_row + result->row_count) {
+            for (int i = 0; i < parser->cell_count; i++) {
+                cxlsb_cell_info* ci = &parser->cells[i];
+                if (ci->row == row) {
+                    if (ci->type == 1) {
+                        int sst_idx = cxlsb_sst_table_find_string(filler->sst, ci->data.text);
+                        if (sst_idx >= 0) {
+                            write_cell_isst(sheet, &pos, ci->col, ci->style_index, sst_idx);
+                        }
+                    } else if (ci->type == 2) {
+                        write_cell_real(sheet, &pos, ci->col, ci->style_index, ci->data.number);
                     }
-                } else if (ci->type == 2) {
-                    write_cell_real(sheet, &pos, ci->col, ci->style_index, ci->data.number);
                 }
             }
         }
         
+        // Write fill data for rows in fill region
         if (row >= result->start_row && row < result->start_row + result->row_count) {
             int data_row = row - result->start_row;
             for (int col = result->start_col; col < result->start_col + result->col_count; col++) {

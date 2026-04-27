@@ -9,11 +9,13 @@ static cxlsb_cell_data_t data_supplier(int row, int col, void* ud) {
     const char* names[] = {"赵六", "钱七", "孙八"};
     const char* cities[] = {"深圳", "杭州", "北京"};
     const char* ages[] = {"35", "22", "28"};
+    const char* genders[] = {"男", "女", "男"};
     
     switch (col) {
         case 0: return cxlsb_cell_text(names[row]);
         case 1: return cxlsb_cell_text(cities[row]);
         case 2: return cxlsb_cell_text(ages[row]);
+        case 3: return cxlsb_cell_text(genders[row]);
         default: return cxlsb_cell_blank();
     }
 }
