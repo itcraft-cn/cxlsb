@@ -107,6 +107,18 @@ else
     FAILED=$((FAILED + 1))
 fi
 
+# Test 11: Mixed mode (batch + streaming)
+echo "[11] Running: test_mixed_mode"
+TOTAL=$((TOTAL + 1))
+if gcc tests/test_mixed_mode.c $LIBS -Iinclude -Isrc -o /tmp/cxlsb_test $ZIP_LIBS 2>/dev/null && \
+   /tmp/cxlsb_test >/dev/null 2>&1; then
+    echo "  ✓ PASSED"
+    PASSED=$((PASSED + 1))
+else
+    echo "  ✗ FAILED"
+    FAILED=$((FAILED + 1))
+fi
+
 echo ""
 echo "=== Summary ==="
 echo "Total:  $TOTAL"
