@@ -11,17 +11,26 @@ else()
 endif()
 
 find_package(ZLIB REQUIRED)
-find_library(LIBZIP_LIBRARY zip)
-find_path(LIBZIP_INCLUDE_DIR zip.h PATHS /usr/include)
+
+find_library(LIBZIP_LIBRARY NAMES zip libzip PATHS /usr/lib /usr/local/lib /lib/x86_64-linux-gnu)
+find_path(LIBZIP_INCLUDE_DIR NAMES zip.h PATHS /usr/include /usr/local/include)
+
+if(NOT LIBZIP_LIBRARY OR NOT LIBZIP_INCLUDE_DIR)
+    message(FATAL_ERROR "libzip not found. Please install libzip-dev:\n"
+        "  Ubuntu/Debian: sudo apt-get install libzip-dev\n"
+        "  Fedora: sudo dnf install libzip-devel\n"
+        "  macOS: brew install libzip")
+endif()
 
 set(ZLOG_ROOT "/home/helly/open_source/github/zlog")
 set(ZLOG_INCLUDE_DIR "${ZLOG_ROOT}/src")
 set(ZLOG_LIBRARY "${ZLOG_ROOT}/libzlog.so")
 
 if(NOT EXISTS "${ZLOG_LIBRARY}")
-    message(WARNING "zlog library not found at ${ZLOG_LIBRARY}, building without zlog")
+    message(STATUS "zlog library not found at ${ZLOG_LIBRARY}, building without zlog")
     set(ZLOG_AVAILABLE OFF)
 else()
+    message(STATUS "Found zlog: ${ZLOG_LIBRARY}")
     set(ZLOG_AVAILABLE ON)
 endif()
 
