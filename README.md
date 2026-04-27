@@ -1,6 +1,8 @@
 # cxlsb - ANSI C XLSB Library
 
-A pure ANSI C implementation of XLSB (Excel Binary Workbook) format reader/writer library, ported from the Java [jxlsb](https://github.com/anomaly/jxlsb) project.
+[中文文档](README_cn.md) | English
+
+A pure ANSI C implementation of XLSB (Excel Binary Workbook) format reader/writer library, ported from the Java [jxlsb](https://github.com/itcraft-cn/jxlsb) project.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![C Standard](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
@@ -252,4 +254,4 @@ Apache License 2.0
 
 ## Acknowledgments
 
-Ported from [jxlsb](https://github.com/anomaly/jxlsb) Java implementation.
+Ported from [jxlsb](https://github.com/itcraft-cn/jxlsb) Java implementation.

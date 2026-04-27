@@ -1,6 +1,8 @@
 # cxlsb - ANSI C XLSB 库
 
-纯 ANSI C 实现的 XLSB (Excel 二进制工作簿) 格式读写库，移植自 Java [jxlsb](https://github.com/anomaly/jxlsb) 项目。
+中文文档 | [English](README.md)
+
+纯 ANSI C 实现的 XLSB (Excel 二进制工作簿) 格式读写库，移植自 Java [jxlsb](https://github.com/itcraft-cn/jxlsb) 项目。
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![C Standard](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
@@ -252,4 +254,4 @@ Apache License 2.0
 
 ## 致谢
 
-移植自 [jxlsb](https://github.com/anomaly/jxlsb) Java 实现。
+移植自 [jxlsb](https://github.com/itcraft-cn/jxlsb) Java 实现。
