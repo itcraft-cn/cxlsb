@@ -119,6 +119,23 @@ else
     FAILED=$((FAILED + 1))
 fi
 
+# Test 12: Template filler API
+echo "[12] Running: test_template_filler (API)"
+TOTAL=$((TOTAL + 1))
+if gcc tests/test_template_filler.c \
+   src/api/template_filler.c src/api/cell_data.c \
+   src/format/sheet_parser.c src/format/sst_table.c \
+   src/format/biff12_writer.c src/io/buffer_writer.c src/io/buffer_reader.c \
+   src/util/error_codes.c src/util/utf16.c src/util/varint.c \
+   -Iinclude -Isrc -o /tmp/cxlsb_test $ZIP_LIBS 2>/dev/null && \
+   /tmp/cxlsb_test >/dev/null 2>&1; then
+    echo "  ✓ PASSED"
+    PASSED=$((PASSED + 1))
+else
+    echo "  ✗ FAILED"
+    FAILED=$((FAILED + 1))
+fi
+
 echo ""
 echo "=== Summary ==="
 echo "Total:  $TOTAL"
