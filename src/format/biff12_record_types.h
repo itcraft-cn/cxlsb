@@ -1,0 +1,50 @@
+#ifndef CXLSB_BIFF12_RECORD_TYPES_H
+#define CXLSB_BIFF12_RECORD_TYPES_H
+
+#define BIFF12_BRT_ROW_HDR           0
+#define BIFF12_BRT_CELL_BLANK        1
+#define BIFF12_BRT_CELL_RK           2
+#define BIFF12_BRT_CELL_ERROR        3
+#define BIFF12_BRT_CELL_BOOL         4
+#define BIFF12_BRT_CELL_REAL         5
+#define BIFF12_BRT_CELL_ST           6
+#define BIFF12_BRT_CELL_ISST         7
+
+#define BIFF12_BRT_SST_ITEM          19
+
+#define BIFF12_BRT_FILE_VERSION      128
+#define BIFF12_BRT_BEGIN_SHEET       129
+#define BIFF12_BRT_END_SHEET         130
+#define BIFF12_BRT_BEGIN_BOOK        131
+#define BIFF12_BRT_END_BOOK          132
+#define BIFF12_BRT_BEGIN_WS_VIEWS    133
+#define BIFF12_BRT_END_WS_VIEWS      134
+#define BIFF12_BRT_BEGIN_BOOK_VIEWS  135
+#define BIFF12_BRT_END_BOOK_VIEWS    136
+#define BIFF12_BRT_BEGIN_WS_VIEW     137
+#define BIFF12_BRT_END_WS_VIEW       138
+#define BIFF12_BRT_BEGIN_BUNDLE_SHS  143
+#define BIFF12_BRT_END_BUNDLE_SHS    144
+#define BIFF12_BRT_BEGIN_SHEET_DATA  145
+#define BIFF12_BRT_END_SHEET_DATA    146
+#define BIFF12_BRT_WS_PROP           147
+#define BIFF12_BRT_WS_DIM            148
+#define BIFF12_BRT_WB_PROP           153
+#define BIFF12_BRT_BUNDLE_SH         156
+#define BIFF12_BRT_BOOK_VIEW         158
+#define BIFF12_BRT_BEGIN_SST         159
+#define BIFF12_BRT_END_SST           160
+
+#define BIFF12_BRT_FMT               44
+#define BIFF12_BRT_FONT              43
+#define BIFF12_BRT_FILL              45
+#define BIFF12_BRT_BORDER            46
+#define BIFF12_BRT_XF                47
+#define BIFF12_BRT_BEGIN_STYLE_SHEET 370
+#define BIFF12_BRT_END_STYLE_SHEET   371
+
+#define BIFF12_BRT_MERGE_CELL        176
+#define BIFF12_BRT_BEGIN_MERGE_CELLS 177
+#define BIFF12_BRT_END_MERGE_CELLS   178
+
+#endif /* CXLSB_BIFF12_RECORD_TYPES_H */
