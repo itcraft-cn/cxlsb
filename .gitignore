@@ -1,0 +1,8 @@
+build/
+*.o
+*.so
+*.a
+*.xlsb
+*.xlsx
+test/output/
+MEMORY.md
