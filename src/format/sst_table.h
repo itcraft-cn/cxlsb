@@ -33,6 +33,8 @@ uint32_t cxlsb_sst_table_get_count(cxlsb_sst_table_t* table);
 uint32_t cxlsb_sst_table_get_total_count(cxlsb_sst_table_t* table);
 
 cxlsb_error_t cxlsb_sst_table_serialize(cxlsb_sst_table_t* table,
-                                         cxlsb_biff12_writer_t* writer);
+                                          cxlsb_biff12_writer_t* writer);
+
+cxlsb_error_t cxlsb_sst_table_load(cxlsb_sst_table_t* table, const uint8_t* data, size_t len);
 
 #endif /* CXLSB_SST_TABLE_H */
