@@ -112,6 +112,9 @@ cxlsb_error_t cxlsb_xml_gen_content_types(int sheet_count,
     int pos = snprintf(buffer, 4096,
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
         "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\n"
+        "<Default Extension=\"bin\" ContentType=\"application/vnd.ms-excel.sheet.binary.macroEnabled.main\"/>\n"
+        "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n"
+        "<Default Extension=\"xml\" ContentType=\"application/xml\"/>\n"
         "<Override PartName=\"/docProps/app.xml\""
         " ContentType=\"application/vnd.openxmlformats-officedocument.extended-properties+xml\"/>\n"
         "<Override PartName=\"/docProps/core.xml\""
