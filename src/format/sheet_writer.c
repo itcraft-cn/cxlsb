@@ -92,7 +92,7 @@ static cxlsb_error_t write_sheet_data(cxlsb_sheet_writer_t* writer, cxlsb_cell_s
                         cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell->value.number, xf_id);
                         break;
                     case CXLSB_CELL_TEXT:
-                        if (writer->sst != NULL && strlen(cell->value.text) > CXLSB_SST_INLINE_THRESHOLD) {
+                        if (writer->sst != NULL) {
                             uint32_t sst_idx = cxlsb_sst_table_add_string(writer->sst, cell->value.text);
                             cxlsb_biff12_writer_write_cell_isst(writer->biff12, row, col, sst_idx, xf_id);
                         } else {
@@ -202,7 +202,7 @@ static cxlsb_error_t write_rows_only(cxlsb_sheet_writer_t* writer, cxlsb_cell_su
                         cxlsb_biff12_writer_write_cell_real(writer->biff12, row, col, cell->value.number, xf_id);
                         break;
                     case CXLSB_CELL_TEXT:
-                        if (writer->sst != NULL && strlen(cell->value.text) > CXLSB_SST_INLINE_THRESHOLD) {
+                        if (writer->sst != NULL) {
                             uint32_t sst_idx = cxlsb_sst_table_add_string(writer->sst, cell->value.text);
                             cxlsb_biff12_writer_write_cell_isst(writer->biff12, row, col, sst_idx, xf_id);
                         } else {

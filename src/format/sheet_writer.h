@@ -1,8 +1,6 @@
 #ifndef CXLSB_SHEET_WRITER_H
 #define CXLSB_SHEET_WRITER_H
 
-#define CXLSB_SST_INLINE_THRESHOLD 3
-
 #include "sst_table.h"
 #include "styles_registry.h"
 #include "biff12_writer.h"
