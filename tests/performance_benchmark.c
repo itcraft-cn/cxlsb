@@ -12,6 +12,20 @@
 #define COLUMN_COUNT 10
 #define PAGE_SIZE 1000
 
+static char name_pool[10000][32];
+static char cat_pool[100][32];
+static char r_pool[10][32];
+static int pool_initialized = 0;
+
+static void init_string_pool(void) {
+    if (!pool_initialized) {
+        for (int i = 0; i < 10000; i++) sprintf(name_pool[i], "Name-%d", i);
+        for (int i = 0; i < 100; i++) sprintf(cat_pool[i], "Cat-%d", i);
+        for (int i = 0; i < 10; i++) sprintf(r_pool[i], "R-%d", i);
+        pool_initialized = 1;
+    }
+}
+
 static const char* BATCH_FILE = "/tmp/cxlsb_batch_write.xlsb";
 static const char* STREAM_FILE = "/tmp/cxlsb_stream_write.xlsb";
 
@@ -24,17 +38,13 @@ typedef struct {
 } read_ctx_t;
 
 static cxlsb_cell_data_t create_cell(int row, int col) {
-    char buf[64];
     switch (col) {
         case 0:
-            sprintf(buf, "Name-%d", row);
-            return cxlsb_cell_text(buf);
+            return cxlsb_cell_text(name_pool[row % 10000]);
         case 1:
-            sprintf(buf, "Category-%d", row % 100);
-            return cxlsb_cell_text(buf);
+            return cxlsb_cell_text(cat_pool[row % 100]);
         case 2:
-            sprintf(buf, "Region-%d", row % 10);
-            return cxlsb_cell_text(buf);
+            return cxlsb_cell_text(r_pool[row % 10]);
         case 3:
             return cxlsb_cell_number(row);
         case 4:
@@ -83,6 +93,8 @@ static double get_time_diff_ms(struct timespec start, struct timespec end) {
 }
 
 int main(void) {
+    init_string_pool();
+    
     printf("\n╔══════════════════════════════════════════════════════════════╗\n");
     printf("║         cxlsb 性能基准测试 (100万行 × 10字段)                 ║\n");
     printf("║         字段类型: 3字符串 + 4整数 + 3浮点数                   ║\n");
@@ -173,8 +185,7 @@ int main(void) {
     printf("读取耗时: %.0f ms\n", elapsed_ms);
     printf("读取速度: %.0f 行/秒\n", TOTAL_ROWS / (elapsed_ms / 1000.0));
     
-    unlink(BATCH_FILE);
-    unlink(STREAM_FILE);
+    
     
     return 0;
 }
