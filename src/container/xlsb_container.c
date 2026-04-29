@@ -51,7 +51,7 @@ cxlsb_error_t cxlsb_container_add_entry(cxlsb_container_t* container,
         return CXLSB_ERR_ZIP_ADD_FAILED;
     }
     
-    if (zip_set_file_compression(container->zip_handle, index, ZIP_CM_STORE, 0) != 0) {
+    if (zip_set_file_compression(container->zip_handle, index, ZIP_CM_DEFLATE, 0) != 0) {
         return CXLSB_ERR_ZIP_ADD_FAILED;
     }
     return CXLSB_OK;
