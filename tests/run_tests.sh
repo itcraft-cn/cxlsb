@@ -136,6 +136,12 @@ else
     FAILED=$((FAILED + 1))
 fi
 
+# Test 13: Paged read
+run_test "test_paged_read" "test_paged_read.c"
+
+# Test 14: Stream read
+run_test "test_stream_read" "test_stream_read.c"
+
 echo ""
 echo "=== Summary ==="
 echo "Total:  $TOTAL"
