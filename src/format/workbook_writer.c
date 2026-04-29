@@ -80,10 +80,10 @@ static void write_brt_book_view(cxlsb_biff12_writer_t* biff12) {
 }
 
 static void write_xl_wide_string(cxlsb_biff12_writer_t* biff12, const char* str) {
-    size_t len = strlen(str);
-    size_t utf16_len = len * 2;
+    size_t utf16_len = cxlsb_utf16le_byte_length(str);
+    size_t char_count = utf16_len / 2;
     
-    cxlsb_buffer_writer_write_int(biff12->buffer, len);
+    cxlsb_buffer_writer_write_int(biff12->buffer, char_count);
     
     uint8_t* utf16_buf = (uint8_t*)malloc(utf16_len);
     if (utf16_buf == NULL) return;

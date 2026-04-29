@@ -164,10 +164,10 @@ cxlsb_error_t cxlsb_biff12_writer_write_ws_dim(cxlsb_biff12_writer_t* writer,
 }
 
 cxlsb_error_t cxlsb_biff12_writer_write_wide_string(cxlsb_biff12_writer_t* writer, const char* str) {
-    size_t len = strlen(str);
-    size_t utf16_len = len * 2;
+    size_t utf16_len = cxlsb_utf16le_byte_length(str);
+    size_t char_count = utf16_len / 2;
     
-    cxlsb_buffer_writer_write_int(writer->buffer, len);
+    cxlsb_buffer_writer_write_int(writer->buffer, char_count);
     
     uint8_t* utf16_buf = (uint8_t*)malloc(utf16_len);
     if (utf16_buf == NULL) return CXLSB_ERR_NO_MEMORY;
