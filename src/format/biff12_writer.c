@@ -169,13 +169,18 @@ cxlsb_error_t cxlsb_biff12_writer_write_wide_string(cxlsb_biff12_writer_t* write
     
     cxlsb_buffer_writer_write_int(writer->buffer, char_count);
     
-    uint8_t* utf16_buf = (uint8_t*)malloc(utf16_len);
-    if (utf16_buf == NULL) return CXLSB_ERR_NO_MEMORY;
+    static uint8_t utf16_buf[2048];
+    if (utf16_len > sizeof(utf16_buf)) {
+        uint8_t* dynamic_buf = (uint8_t*)malloc(utf16_len);
+        if (dynamic_buf == NULL) return CXLSB_ERR_NO_MEMORY;
+        cxlsb_utf8_to_utf16le(str, dynamic_buf, &utf16_len);
+        cxlsb_error_t err = cxlsb_buffer_writer_write_bytes(writer->buffer, dynamic_buf, utf16_len);
+        free(dynamic_buf);
+        return err;
+    }
     
     cxlsb_utf8_to_utf16le(str, utf16_buf, &utf16_len);
-    cxlsb_error_t err = cxlsb_buffer_writer_write_bytes(writer->buffer, utf16_buf, utf16_len);
-    free(utf16_buf);
-    return err;
+    return cxlsb_buffer_writer_write_bytes(writer->buffer, utf16_buf, utf16_len);
 }
 
 void cxlsb_biff12_writer_reset(cxlsb_biff12_writer_t* writer) {
