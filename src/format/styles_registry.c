@@ -1,6 +1,7 @@
 #include "styles_registry.h"
+#include "../util/utf16.h"
+#include "biff12_writer.h"
 #include "biff12_record_types.h"
-#include "../io/buffer_writer.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -127,17 +128,22 @@ static void write_brt_xf_style(cxlsb_biff12_writer_t* w, int format_id, int is_f
 }
 
 static void write_brt_fmt(cxlsb_biff12_writer_t* w, uint16_t format_id, const char* format_string) {
-    size_t str_len = strlen(format_string);
-    size_t str_bytes = str_len * 2;
-    uint32_t record_size = 2 + 4 + str_bytes;
+    size_t utf16_len = cxlsb_utf16le_byte_length(format_string);
+    uint8_t* utf16_buf = (uint8_t*)malloc(utf16_len);
+    if (utf16_buf == NULL) return;
+    
+    size_t actual_len;
+    cxlsb_utf8_to_utf16le(format_string, utf16_buf, &actual_len);
+    
+    size_t char_count = utf16_len / 2;
+    uint32_t record_size = 2 + 4 + utf16_len;
     
     cxlsb_biff12_writer_write_record_header(w, BIFF12_BRT_FMT, record_size);
     cxlsb_buffer_writer_write_short(w->buffer, format_id);
-    cxlsb_buffer_writer_write_int(w->buffer, str_len);
+    cxlsb_buffer_writer_write_int(w->buffer, char_count);
+    cxlsb_buffer_writer_write_bytes(w->buffer, utf16_buf, utf16_len);
     
-    for (size_t i = 0; i < str_len; i++) {
-        cxlsb_buffer_writer_write_short(w->buffer, format_string[i]);
-    }
+    free(utf16_buf);
 }
 
 cxlsb_error_t cxlsb_styles_registry_to_bytes(cxlsb_styles_registry_t* registry, uint8_t** out_data, size_t* out_length) {
