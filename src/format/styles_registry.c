@@ -176,16 +176,19 @@ cxlsb_error_t cxlsb_styles_registry_to_bytes(cxlsb_styles_registry_t* registry, 
     write_brt_border(w);
     cxlsb_biff12_writer_write_empty_record(w, BIFF12_BRT_END_BORDERS);
     
+    // BrtBeginXFs: only 1 default XF (matching jxlsb/rxlsb)
     cxlsb_biff12_writer_write_record_header(w, BIFF12_BRT_BEGIN_XFS, 4);
+    cxlsb_buffer_writer_write_int(w->buffer, 1);
+    write_brt_xf_default(w);
+    cxlsb_biff12_writer_write_empty_record(w, BIFF12_BRT_END_XFS);
+    
+    // BrtBeginStyles: contains all format XFs (matching jxlsb/rxlsb)
+    cxlsb_biff12_writer_write_record_header(w, BIFF12_BRT_BEGIN_STYLES, 4);
     cxlsb_buffer_writer_write_int(w->buffer, registry->style_count);
     for (uint32_t i = 0; i < registry->style_count; i++) {
-        if (i == 0) {
-            write_brt_xf_default(w);
-        } else {
-            write_brt_xf_style(w, registry->styles[i].num_fmt_id, false);
-        }
+        write_brt_xf_style(w, registry->styles[i].num_fmt_id, i == 0);
     }
-    cxlsb_biff12_writer_write_empty_record(w, BIFF12_BRT_END_XFS);
+    cxlsb_biff12_writer_write_empty_record(w, BIFF12_BRT_END_STYLES);
     
     cxlsb_biff12_writer_write_empty_record(w, BIFF12_BRT_END_CELL_STYLE_XFS);
     
