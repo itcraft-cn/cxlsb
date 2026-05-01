@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(cxlsb VERSION 0.1.0 LANGUAGES C) # managed by updgitver
+project(cxlsb VERSION 0.2.0 LANGUAGES C) # managed by updgitver
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
