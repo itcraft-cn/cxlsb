@@ -63,6 +63,16 @@ cxlsb_writer_t* cxlsb_writer_create(const char* path) {
     return writer;
 }
 
+int cxlsb_writer_add_format(cxlsb_writer_t* writer, const char* format_string) {
+    if (writer == NULL || format_string == NULL) return -1;
+    return cxlsb_styles_registry_add_format(writer->styles, format_string);
+}
+
+int cxlsb_writer_add_style(cxlsb_writer_t* writer, int num_fmt_id) {
+    if (writer == NULL) return -1;
+    return cxlsb_styles_registry_add_style(writer->styles, num_fmt_id);
+}
+
 void cxlsb_writer_destroy(cxlsb_writer_t* writer) {
     if (writer != NULL) {
         if (!writer->is_closed) cxlsb_writer_close(writer);

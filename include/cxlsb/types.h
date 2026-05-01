@@ -16,6 +16,7 @@ typedef enum cxlsb_cell_type {
 
 typedef struct cxlsb_cell_data {
     cxlsb_cell_type_t type;
+    uint32_t style_index;
     union {
         double number;
         const char* text;

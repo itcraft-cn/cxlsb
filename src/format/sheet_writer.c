@@ -85,7 +85,7 @@ static cxlsb_error_t write_sheet_data(cxlsb_sheet_writer_t* writer, cxlsb_cell_s
             cxlsb_biff12_writer_write_row_header(writer->biff12, row, first_col, last_col);
             for (int col = first_col; col <= last_col; col++) {
                 cxlsb_cell_data_t* cell = &row_cache[col];
-                uint32_t xf_id = 0;
+                uint32_t xf_id = cell->style_index;
                 
                 switch (cell->type) {
                     case CXLSB_CELL_NUMBER:
@@ -195,7 +195,7 @@ static cxlsb_error_t write_rows_only(cxlsb_sheet_writer_t* writer, cxlsb_cell_su
             cxlsb_biff12_writer_write_row_header(writer->biff12, row, first_col, last_col);
             for (int col = first_col; col <= last_col; col++) {
                 cxlsb_cell_data_t* cell = &row_cache[col];
-                uint32_t xf_id = 0;
+                uint32_t xf_id = cell->style_index;
                 
                 switch (cell->type) {
                     case CXLSB_CELL_NUMBER:

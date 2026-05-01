@@ -18,6 +18,9 @@ cxlsb_error_t cxlsb_writer_end_sheet(cxlsb_writer_t* writer);
 int cxlsb_writer_get_sheet_count(cxlsb_writer_t* writer);
 cxlsb_error_t cxlsb_writer_close(cxlsb_writer_t* writer);
 
+int cxlsb_writer_add_format(cxlsb_writer_t* writer, const char* format_string);
+int cxlsb_writer_add_style(cxlsb_writer_t* writer, int num_fmt_id);
+
 typedef struct cxlsb_sheet_data_entry {
     uint8_t* data;
     size_t length;
