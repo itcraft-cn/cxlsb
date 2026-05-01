@@ -109,9 +109,9 @@ static void write_brt_border(cxlsb_biff12_writer_t* w) {
 static void write_brt_xf_default(cxlsb_biff12_writer_t* w) {
     uint8_t xf_data[16] = {0};
     xf_data[0] = 0xff;
-    xf_data[1] = 0xff;
-    xf_data[12] = 0x08;
-    xf_data[13] = 0x10;
+    xf_data[1] = 0xff;  // iStyleRef=ffff (cell XF)
+    xf_data[12] = 0xff;
+    xf_data[13] = 0xff;  // xfId=ffff
     cxlsb_biff12_writer_write_record_header(w, BIFF12_BRT_XF, 16);
     cxlsb_buffer_writer_write_bytes(w->buffer, xf_data, 16);
 }
@@ -119,10 +119,9 @@ static void write_brt_xf_default(cxlsb_biff12_writer_t* w) {
 static void write_brt_xf_style(cxlsb_biff12_writer_t* w, int format_id, int is_first) {
     uint8_t xf_data[16] = {0};
     xf_data[2] = format_id & 0xff;
-    xf_data[3] = (format_id >> 8) & 0xff;
-    xf_data[12] = 0x08;
-    xf_data[13] = 0x10;
-    if (!is_first) xf_data[14] = 0x01;
+    xf_data[3] = (format_id >> 8) & 0xff;  // ifmt
+    xf_data[12] = 0x00;
+    xf_data[13] = 0x00;  // xfId=0 (style XF)
     cxlsb_biff12_writer_write_record_header(w, BIFF12_BRT_XF, 16);
     cxlsb_buffer_writer_write_bytes(w->buffer, xf_data, 16);
 }
