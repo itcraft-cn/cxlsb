@@ -1,104 +1,122 @@
-# Changelog
+**中文** | [English](CHANGELOG_en.md)
 
-All notable changes to this project will be documented in this file.
+# 变更日志
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+本项目所有值得注意的变更都记录在此文件中。
+
+格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
+本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+
+## [未发布]
+
+### 新增
+
+- LICENSE 文件
+
+### 变更
+
+- 文档：新增「设计定位」章节
+- 版本：进入 0.2.0
 
 ## [1.0.0] - 2026-04-28
 
-### Added
-- Initial release of cxlsb ANSI C library
-- Writer API with batch and streaming modes
-- Reader API with row iteration
-- Template filler API with marker and index-based fill
-- Shared String Table (SST) management
-- Support for cell types: Number, Text, Boolean, Date, Blank
-- Dynamic buffer sizing based on data dimensions
-- Row-level caching to optimize supplier calls
-- Cross-platform support (Linux, Windows)
-- 12 comprehensive tests with 100% pass rate
+### 新增
+- cxlsb ANSI C 库首次发布
+- 写入 API，支持批量与流式模式
+- 读取 API，支持行迭代
+- 模板填充 API，支持标记与索引填充
+- 共享字符串表（SST）管理
+- 支持单元格类型：数字、文本、布尔、日期、空白
+- 按数据维度动态计算缓冲区大小
+- 行级缓存以优化 supplier 调用
+- 跨平台支持（Linux、Windows）
+- 12 个综合测试，100% 通过
 
-### Fixed
-- malloc NULL checks in template_filler.c
-- malloc NULL checks in xlsb_reader.c
-- malloc NULL checks in workbook_writer.c
-- Reader column mapping: cells[col - first_col] for relative index
-- SST string length: utf16_len / 2 (char count, not byte count)
-- WsView block alignment with correct byte layout
-- Template preservation: keep cells outside fill region
+### 修复
+- template_filler.c 中的 malloc NULL 检查
+- xlsb_reader.c 中的 malloc NULL 检查
+- workbook_writer.c 中的 malloc NULL 检查
+- 读取器列映射：cells[col - first_col] 使用相对索引
+- SST 字符串长度：utf16_len / 2（字符数而非字节数）
+- WsView 块对齐，使用正确的字节布局
+- 模板保留：保留填充区域外的单元格
 
-### Changed
-- Optimized supplier calls: single invocation per row with caching
-- Defined CXLSB_SST_INLINE_THRESHOLD constant (replaced magic number)
-- Dynamic sheet buffer sizing in template_filler
-- Dynamic SST buffer sizing based on string content
+### 变更
+- 优化 supplier 调用：每行单次调用并缓存
+- 定义 CXLSB_SST_INLINE_THRESHOLD 常量（替代魔数）
+- template_filler 中动态计算工作表缓冲区大小
+- 根据字符串内容动态计算 SST 缓冲区大小
 
 ## [0.9.0] - 2026-04-27
 
-### Added
-- Streaming write mode for large datasets
-- Template fill with ${data} marker detection
-- Read/write roundtrip tests
-- Mixed mode test (batch + streaming)
+### 新增
+- 面向大数据集的流式写入模式
+- 支持 ${data} 标记检测的模板填充
+- 读写往返测试
+- 混合模式测试（批量 + 流式）
 
-### Fixed
-- Streaming mode sheet_writer implementation
-- Cell reference and record sizes
-- Workbook.bin and Content_Types.xml structure
+### 修复
+- 流式模式的 sheet_writer 实现
+- 单元格引用与记录大小
+- Workbook.bin 与 Content_Types.xml 结构
 
 ## [0.8.0] - 2026-04-26
 
-### Added
-- Basic XLSB writer functionality
-- Basic XLSB reader functionality
-- BIFF12 format handling (varint encoding, UTF-16LE)
-- ZIP container handling with libzip
-- SST table with hash-based deduplication
+### 新增
+- 基础 XLSB 写入功能
+- 基础 XLSB 读取功能
+- BIFF12 格式处理（varint 编码、UTF-16LE）
+- 基于 libzip 的 ZIP 容器处理
+- 带哈希去重的 SST 表
 
-### Fixed
-- WsProp/WsView/WsFmtInfo to match jxlsb reference
-- Row/column header visibility control
+### 修复
+- WsProp/WsView/WsFmtInfo 对齐 jxlsb 参考实现
+- 行/列表头可见性控制
 
 ## [0.7.0] - 2026-04-25
 
-### Added
-- Project structure setup
-- Core type definitions (types.h)
-- Error codes definition (error_codes.h)
-- Cell data helpers (cell_data.h)
-- Buffer writer/reader implementation
-- Varint encoding/decoding
-- UTF-8 to UTF-16LE conversion
+### 新增
+- 项目结构搭建
+- 核心类型定义（types.h）
+- 错误码定义（error_codes.h）
+- 单元格数据辅助（cell_data.h）
+- 缓冲区读写实现
+- Varint 编解码
+- UTF-8 转 UTF-16LE
 
 ---
 
-## Version History
+## 版本历史
 
-| Version | Date | Description |
-|---------|------|-------------|
-| 1.0.0 | 2026-04-28 | Production release, all tests passing |
-| 0.9.0 | 2026-04-27 | Streaming and template fill |
-| 0.8.0 | 2026-04-26 | Basic read/write functionality |
-| 0.7.0 | 2026-04-25 | Project initialization |
+| 版本 | 日期 | 描述 |
+|------|------|------|
+| 1.0.0 | 2026-04-28 | 生产发布，全部测试通过 |
+| 0.9.0 | 2026-04-27 | 流式与模板填充 |
+| 0.8.0 | 2026-04-26 | 基础读写功能 |
+| 0.7.0 | 2026-04-25 | 项目初始化 |
 
-## Roadmap
+## 路线图
 
-### [1.1.0] - Planned
-- Pagination API with offset/limit parameters
-- Cell style support (fonts, fills, borders)
-- Conditional formatting
-- Formula support (read-only)
-- Merged cells in streaming mode
+### [1.1.0] - 计划中
+- 带 offset/limit 参数的分页 API
+- 单元格样式支持（字体、填充、边框）
+- 条件格式
+- 公式支持（只读）
+- 流式模式下的合并单元格
 
-### [1.2.0] - Planned
-- Windows CI/CD pipeline
-- Performance benchmark suite
-- Memory leak detection with valgrind
-- Code coverage reporting
+### [1.2.0] - 计划中
+- Windows CI/CD 流水线
+- 性能基准套件
+- 使用 valgrind 的内存泄漏检测
+- 代码覆盖率报告
 
-### [2.0.0] - Future
-- Multi-sheet concurrent processing
-- Encryption support
-- Compression optimization
-- Async I/O support
+### [2.0.0] - 未来
+- 多工作表并发处理
+- 加密支持
+- 压缩优化
+- 异步 I/O 支持
+
+## 相关文档
+
+- [README.md](README.md)（中文） / [README_en.md](README_en.md)（英文）
+- [MANUAL.md](MANUAL.md)（中文） / [MANUAL_en.md](MANUAL_en.md)（英文）

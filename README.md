@@ -1,57 +1,57 @@
-# cxlsb - ANSI C XLSB Library
+# cxlsb - ANSI C XLSB 库
 
-[中文文档](README_cn.md) | English
+**中文** | [English](README_en.md)
 
-A pure ANSI C implementation of XLSB (Excel Binary Workbook) format reader/writer library, ported from the Java [jxlsb](https://github.com/itcraft-cn/jxlsb) project.
+纯 ANSI C 实现的 XLSB (Excel 二进制工作簿) 格式读写库，移植自 Java [jxlsb](https://github.com/itcraft-cn/jxlsb) 项目。
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![C Standard](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 
-## Design Positioning
+## 设计定位
 
-This library has a fixed starting point: **high-performance data output (writing)**. Reading was originally meant only for consuming templates. But once reading was in place, high-performance reading became a natural extension of the same core.
+本库的出发点始终明确：**做高性能的数据输出（写入）**。读取最初只是为了读模板；但读一旦做了，高性能读也就顺理成章地成为同一内核的自然延伸。
 
-Viewed from this narrow, output-oriented angle, XLSX is simply not needed — XLSB is more than capable.
+站在这个窄应用视角看，XLSX 其实并不需要——XLSB 已经非常能打。
 
-## Features
+## 特性
 
-- **Zero Dependencies**: Only requires libzip for ZIP container handling
-- **Cross-Platform**: Linux and Windows support
-- **High Performance**: 
-  - Row-level caching to avoid redundant supplier calls
-  - Dynamic buffer sizing based on data dimensions
-  - Streaming mode for large datasets (>1M rows)
-- **Full Functionality**: Feature-aligned with Java jxlsb implementation
-- **Functional API**: Pure functions with callback pointers for flexibility
-- **Memory Safe**: Complete malloc NULL checks, create/destroy pattern
+- **零依赖**: 仅需要 libzip 处理 ZIP 容器
+- **跨平台**: 支持 Linux 和 Windows
+- **高性能**:
+  - 行级缓存避免重复 supplier 调用
+  - 动态缓冲区大小按数据维度计算
+  - 流式模式支持大数据集 (>100万行)
+- **功能完整**: 与 Java jxlsb 实现对齐
+- **函数式 API**: 纯函数 + 回调指针，灵活易用
+- **内存安全**: 完整的 malloc NULL 检查，create/destroy 模式
 
-## Supported Operations
+## 支持操作
 
-| Feature | API | Description |
-|---------|-----|-------------|
-| Batch Write | `cxlsb_writer_write_batch` | Write entire sheet in one call |
-| Streaming Write | `cxlsb_writer_start_sheet` + `write_rows` + `end_sheet` | Append rows incrementally |
-| Row Iteration | `cxlsb_reader_for_each_row` | Process each row with callback |
-| Template Fill (Marker) | `cxlsb_template_filler_fill_marker` | Fill at `${data}` marker position |
-| Template Fill (Index) | `cxlsb_template_filler_fill_index` | Fill at specified row/column |
-| SST Management | Shared String Table | Automatic deduplication for text cells |
+| 功能 | API | 描述 |
+|------|-----|------|
+| 批量写入 | `cxlsb_writer_write_batch` | 单次调用写入整张工作表 |
+| 流式写入 | `cxlsb_writer_start_sheet` + `write_rows` + `end_sheet` | 逐批追加行 |
+| 行迭代 | `cxlsb_reader_for_each_row` | 回调处理每行数据 |
+| 模板填充 (标记) | `cxlsb_template_filler_fill_marker` | 在 `${data}` 标记位置填充 |
+| 模板填充 (索引) | `cxlsb_template_filler_fill_index` | 在指定行列位置填充 |
+| SST 管理 | 共享字符串表 | 文本单元格自动去重 |
 
-## Cell Types
+## 单元格类型
 
-| Type | Constant | BIFF12 Record |
-|------|----------|---------------|
-| Number | `CXLSB_CELL_NUMBER` | CellReal (type=4) |
-| Text | `CXLSB_CELL_TEXT` | CellIsst (type=7) for SST, CellSt (type=6) for inline |
-| Boolean | `CXLSB_CELL_BOOL` | CellBool (type=9) |
-| Date | `CXLSB_CELL_DATE` | CellReal with date format |
-| Blank | `CXLSB_CELL_BLANK` | CellBlank (type=0) |
+| 类型 | 常量 | BIFF12 记录 |
+|------|------|-------------|
+| 数字 | `CXLSB_CELL_NUMBER` | CellReal (类型=4) |
+| 文本 | `CXLSB_CELL_TEXT` | CellIsst (类型=7) 用SST，CellSt (类型=6) 内联 |
+| 布尔 | `CXLSB_CELL_BOOL` | CellBool (类型=9) |
+| 日期 | `CXLSB_CELL_DATE` | CellReal 加日期格式 |
+| 空白 | `CXLSB_CELL_BLANK` | CellBlank (类型=0) |
 
-## Build
+## 构建
 
-### Prerequisites
+### 前置条件
 
-- GCC or compatible C compiler (C99 support)
-- libzip development package
+- GCC 或兼容 C 编译器 (支持 C99)
+- libzip 开发包
 
 ```bash
 # Ubuntu/Debian
@@ -61,21 +61,21 @@ sudo apt-get install libzip-dev
 sudo dnf install libzip-devel
 ```
 
-### Compile
+### 编译
 
 ```bash
-# Compile single test
+# 编译单个测试
 gcc tests/test_simple_write.c \
   src/api/*.c src/format/*.c src/container/*.c src/io/*.c src/util/*.c \
   -Iinclude -Isrc $(pkg-config --libs libzip) -o /tmp/test_simple_write
 
-# Run all tests
+# 运行全部测试
 tests/run_tests.sh
 ```
 
-## Usage
+## 使用示例
 
-### Write XLSB
+### 写入 XLSB
 
 ```c
 #include "cxlsb/xlsb_writer.h"
@@ -83,7 +83,7 @@ tests/run_tests.sh
 
 cxlsb_cell_data_t supplier(int row, int col, void* data) {
     switch (col) {
-        case 0: return cxlsb_cell_text("Name");
+        case 0: return cxlsb_cell_text("姓名");
         case 1: return cxlsb_cell_number(row * 100.0);
         case 2: return cxlsb_cell_bool(row % 2 == 0);
         default: return cxlsb_cell_blank();
@@ -95,7 +95,7 @@ int main() {
     
     cxlsb_error_t err = cxlsb_writer_write_batch(w, "Sheet1", supplier, NULL, 1000, 3);
     if (err != CXLSB_OK) {
-        printf("Error: %s\n", cxlsb_error_string(err));
+        printf("错误: %s\n", cxlsb_error_string(err));
     }
     
     cxlsb_writer_destroy(w);
@@ -103,12 +103,12 @@ int main() {
 }
 ```
 
-### Streaming Write (Large Files)
+### 流式写入 (大文件)
 
 ```c
 cxlsb_writer_t* w = cxlsb_writer_create("large.xlsb");
 
-cxlsb_writer_start_sheet(w, "Data", 3);
+cxlsb_writer_start_sheet(w, "数据", 3);
 
 for (int batch = 0; batch < 10; batch++) {
     cxlsb_writer_write_rows(w, batch * 10000, supplier, NULL, 10000);
@@ -119,13 +119,13 @@ cxlsb_writer_close(w);
 cxlsb_writer_destroy(w);
 ```
 
-### Read XLSB
+### 读取 XLSB
 
 ```c
 #include "cxlsb/xlsb_reader.h"
 
 void row_handler(int row, int col_count, cxlsb_cell_data_t* cells, void* data) {
-    printf("Row %d: ", row);
+    printf("行 %d: ", row);
     for (int i = 0; i < col_count; i++) {
         switch (cells[i].type) {
             case CXLSB_CELL_TEXT:
@@ -135,7 +135,7 @@ void row_handler(int row, int col_count, cxlsb_cell_data_t* cells, void* data) {
                 printf("%.2f ", cells[i].value.number);
                 break;
             default:
-                printf("(blank) ");
+                printf("(空) ");
         }
     }
     printf("\n");
@@ -146,7 +146,7 @@ int main() {
     
     cxlsb_error_t err = cxlsb_reader_for_each_row(r, 0, row_handler, NULL);
     if (err != CXLSB_OK) {
-        printf("Error: %s\n", cxlsb_error_string(err));
+        printf("错误: %s\n", cxlsb_error_string(err));
     }
     
     cxlsb_reader_destroy(r);
@@ -154,7 +154,7 @@ int main() {
 }
 ```
 
-### Template Fill
+### 模板填充
 
 ```c
 #include "cxlsb/template_filler.h"
@@ -172,7 +172,7 @@ int main() {
     if (err == CXLSB_OK) {
         cxlsb_template_filler_save(filler, "output.xlsb");
     } else {
-        printf("Error: %s\n", cxlsb_error_string(err));
+        printf("错误: %s\n", cxlsb_error_string(err));
     }
     
     cxlsb_template_filler_destroy(filler);
@@ -180,9 +180,9 @@ int main() {
 }
 ```
 
-## Error Handling
+## 错误处理
 
-All API functions return `cxlsb_error_t` enum:
+所有 API 函数返回 `cxlsb_error_t` 枚举:
 
 ```c
 typedef enum {
@@ -196,68 +196,73 @@ typedef enum {
 } cxlsb_error_t;
 ```
 
-Use `cxlsb_error_string(err)` to get human-readable error description.
+使用 `cxlsb_error_string(err)` 获取可读错误描述。
 
-## Project Structure
+## 项目结构
 
 ```
 cxlsb/
-├── include/cxlsb/       # Public API headers
-│   ├── types.h          # Core type definitions
-│   ├── error_codes.h    # Error codes
-│   ├── cell_data.h      # Cell data helpers
-│   ├── xlsb_writer.h    # Writer API
-│   ├── xlsb_reader.h    # Reader API
-│   └── template_filler.h # Template fill API
+├── include/cxlsb/       # 公共 API 头文件
+│   ├── types.h          # 核心类型定义
+│   ├── error_codes.h    # 错误码
+│   ├── cell_data.h      # 单元格数据辅助函数
+│   ├── xlsb_writer.h    # 写入器 API
+│   ├── xlsb_reader.h    # 读取器 API
+│   └── template_filler.h # 模板填充 API
 ├── src/
-│   ├── api/             # API implementation
-│   ├── format/          # BIFF12 format handling
-│   ├── container/       # ZIP container handling
-│   ├── io/              # Buffered I/O
-│   └── util/            # Utilities (varint, UTF-16)
-├── tests/               # Test suite (12 tests)
-│   └── resources/       # Test templates
-└── tools/               # Utilities
+│   ├── api/             # API 实现
+│   ├── format/          # BIFF12 格式处理
+│   ├── container/       # ZIP 容器处理
+│   ├── io/              # 缓冲读写
+│   └── util/            # 工具函数 (varint, UTF-16)
+├── tests/               # 测试套件 (12个测试)
+│   └── resources/       # 测试模板
+└── tools/               # 工具程序
 ```
 
-## Test Coverage
+## 测试覆盖
 
-| Test | Description |
-|------|-------------|
-| test_simple_write | Basic write operation |
-| test_reader_simple | Basic read operation |
-| test_read_write | Read/write roundtrip |
-| test_stream_simple | Streaming mode |
-| test_stream_multi_batch | Multiple streaming batches |
-| test_stream_large | Large dataset streaming |
-| test_pagination | Page-based reading |
-| test_mixed_types | Multiple cell types |
-| test_mixed_mode | Batch + streaming combined |
-| template_fill_marker | Marker-based fill |
-| template_fill_index | Index-based fill |
-| test_template_filler | Template filler API |
+| 测试 | 描述 |
+|------|------|
+| test_simple_write | 基本写入操作 |
+| test_reader_simple | 基本读取操作 |
+| test_read_write | 读写往返测试 |
+| test_stream_simple | 流式模式 |
+| test_stream_multi_batch | 多批次流式 |
+| test_stream_large | 大数据集流式 |
+| test_pagination | 分页读取 |
+| test_mixed_types | 多单元格类型 |
+| test_mixed_mode | 批量 + 流式混合 |
+| template_fill_marker | 标记填充 |
+| template_fill_index | 索引填充 |
+| test_template_filler | 模板填充 API |
 
-All 12 tests passing.
+12个测试全部通过。
 
-## Performance
+## 性能优化
 
-- **Supplier optimization**: Single call per row (cached)
-- **Dynamic buffers**: Size calculated from dimensions, no overflow risk
-- **SST threshold**: Strings >3 chars use SST, shorter use inline
-- **Streaming**: Supports datasets exceeding memory limits
+- **Supplier 优化**: 每行单次调用 (缓存)
+- **动态缓冲区**: 按维度计算大小，无溢出风险
+- **SST 阈值**: >3字符用SST，短字符串内联
+- **流式写入**: 支持超出内存限制的数据集
 
-## BIFF12 Format
+## BIFF12 格式
 
-This library implements MS-XLSB specification:
-- Varint encoding for record type and size
-- UTF-16LE for string content
-- Shared String Table (SST) for text deduplication
-- ROW_HDR record with span segments
+本库实现 MS-XLSB 规范:
+- Varint 编码记录类型和大小
+- UTF-16LE 字符串内容
+- 共享字符串表 (SST) 文本去重
+- ROW_HDR 记录带 span 段
 
-## License
+## 相关文档
+
+- [使用手册](MANUAL.md) — 安装、构建、API 用法与示例
+- [变更日志](CHANGELOG.md) — 版本历史
+
+## 许可证
 
 Apache License 2.0
 
-## Acknowledgments
+## 致谢
 
-Ported from [jxlsb](https://github.com/itcraft-cn/jxlsb) Java implementation.
+移植自 [jxlsb](https://github.com/itcraft-cn/jxlsb) Java 实现。
