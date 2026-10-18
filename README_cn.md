@@ -7,6 +7,12 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![C Standard](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 
+## 设计定位
+
+本库的出发点始终明确：**做高性能的数据输出（写入）**。读取最初只是为了读模板；但读一旦做了，高性能读也就顺理成章地成为同一内核的自然延伸。
+
+站在这个窄应用视角看，XLSX 其实并不需要——XLSB 已经非常能打。
+
 ## 特性
 
 - **零依赖**: 仅需要 libzip 处理 ZIP 容器

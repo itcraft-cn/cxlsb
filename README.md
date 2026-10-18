@@ -7,6 +7,12 @@ A pure ANSI C implementation of XLSB (Excel Binary Workbook) format reader/write
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![C Standard](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 
+## Design Positioning
+
+This library has a fixed starting point: **high-performance data output (writing)**. Reading was originally meant only for consuming templates. But once reading was in place, high-performance reading became a natural extension of the same core.
+
+Viewed from this narrow, output-oriented angle, XLSX is simply not needed — XLSB is more than capable.
+
 ## Features
 
 - **Zero Dependencies**: Only requires libzip for ZIP container handling
