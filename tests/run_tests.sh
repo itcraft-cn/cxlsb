@@ -17,6 +17,7 @@ CFLAGS="-Iinclude -Isrc"
 LIBS="src/api/cell_data.c src/api/xlsb_reader.c src/api/xlsb_writer.c \
      src/container/xlsb_container.c src/container/xlsb_container_reader.c \
      src/format/biff12_writer.c src/format/sheet_writer.c src/format/sst_table.c \
+     src/format/limits.c \
      src/format/styles_registry.c src/format/workbook_writer.c \
      src/io/buffer_reader.c src/io/buffer_writer.c \
      src/util/error_codes.c src/util/rels_gen.c src/util/utf16.c src/util/varint.c src/util/xml_gen.c"
@@ -83,7 +84,7 @@ echo "[9] Running: template_fill_index (special)"
 TOTAL=$((TOTAL + 1))
 if gcc tests/template_fill_index.c \
    src/format/sheet_parser.c src/format/sst_table.c \
-   src/format/biff12_writer.c src/io/buffer_writer.c \
+   src/format/biff12_writer.c src/format/limits.c src/io/buffer_writer.c \
    src/io/buffer_reader.c \
    src/util/error_codes.c src/util/utf16.c src/util/varint.c \
    -Iinclude -Isrc -o /tmp/cxlsb_test $ZIP_LIBS 2>/dev/null && \
@@ -125,7 +126,7 @@ TOTAL=$((TOTAL + 1))
 if gcc tests/test_template_filler.c \
    src/api/template_filler.c src/api/cell_data.c \
    src/format/sheet_parser.c src/format/sst_table.c \
-   src/format/biff12_writer.c src/io/buffer_writer.c src/io/buffer_reader.c \
+   src/format/biff12_writer.c src/format/limits.c src/io/buffer_writer.c src/io/buffer_reader.c \
    src/util/error_codes.c src/util/utf16.c src/util/varint.c \
    -Iinclude -Isrc -o /tmp/cxlsb_test $ZIP_LIBS 2>/dev/null && \
    /tmp/cxlsb_test >/dev/null 2>&1; then
@@ -141,6 +142,9 @@ run_test "test_paged_read" "test_paged_read.c"
 
 # Test 14: Stream read
 run_test "test_stream_read" "test_stream_read.c"
+
+# Test 15: Limits / RK sync
+run_test "test_limits_rk" "test_limits_rk.c"
 
 echo ""
 echo "=== Summary ==="

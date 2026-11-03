@@ -12,6 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - LICENSE file
+- **Row/column limit overflow policy** (aligned with rxlsb): `CXLSB_MAX_COLUMNS = 16384`,
+  `CXLSB_MAX_ROWS = 1048576`; `cxlsb_set_column_overflow/set_row_overflow/set_overflow` with
+  `CXLSB_OVERFLOW_ERROR/CUT`, returning `CXLSB_ERR_LIMIT_EXCEEDED` or truncating
+- Configurable ZIP compression level: `cxlsb_writer_set_compression_level`, default **1**
+- RK writing for integral numbers and `BrtCellRk` parsing in the reader
+
+### Fixed
+
+- `BrtWsFmtInfo` record type corrected to **485** (old 229 made WPS show only the first row)
+- `BrtWsDim` field order corrected; streaming writes use a prologue placeholder and backfill
+- `BrtRowHdr` supports multi-span for >1024 columns; reader uses the last span
+- `BrtCellSt` layout fixed (no extra flags byte); SST character count uses UTF-16 code units
+- SST reading uses one bounds check, sequential decode, and handles UTF-16 surrogate pairs
+- Blank cells no longer emit `BrtCellBlank`
+- Template filling honors row/column limits
+- RK encoding/decoding uses the standard integer form (bit1=fInt, bit0=fX100)
 
 ### Changed
 

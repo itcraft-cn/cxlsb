@@ -3,6 +3,7 @@
 #include "../format/sheet_parser.h"
 #include "../format/sst_table.h"
 #include "../format/biff12_writer.h"
+#include "../format/limits.h"
 #include "../io/buffer_writer.h"
 #include "../util/varint.h"
 #include "../util/utf16.h"
@@ -92,6 +93,36 @@ static void write_cell_real(uint8_t* buf, int* pos, int col, int xf_id, double v
     
     memcpy(buf + *pos, &val, 8);
     *pos += 8;
+}
+
+static void write_cell_rk(uint8_t* buf, int* pos, int col, int xf_id, double val) {
+    uint8_t hdr[10];
+    int hlen = cxlsb_varint_encode(2, hdr);
+    int slen = cxlsb_varint_encode(12, hdr + hlen);
+    memcpy(buf + *pos, hdr, hlen + slen);
+    *pos += hlen + slen;
+
+    uint32_t col_val = (uint32_t)col;
+    memcpy(buf + *pos, &col_val, 4);
+    buf[*pos + 4] = xf_id & 0xFF;
+    buf[*pos + 5] = (xf_id >> 8) & 0xFF;
+    buf[*pos + 6] = (xf_id >> 16) & 0xFF;
+    buf[*pos + 7] = 0;
+    *pos += 8;
+
+    int32_t iv = (int32_t)val;
+    uint32_t rk = ((uint32_t)iv << 2) | 0x02;
+    memcpy(buf + *pos, &rk, 4);
+    *pos += 4;
+}
+
+/* 整数且 |n| < 2^29 用 RK，否则用 Real。 */
+static void write_cell_number(uint8_t* buf, int* pos, int col, int xf_id, double val) {
+    if (val >= -536870912.0 && val <= 536870911.0 && val == (double)(int32_t)val) {
+        write_cell_rk(buf, pos, col, xf_id, val);
+    } else {
+        write_cell_real(buf, pos, col, xf_id, val);
+    }
 }
 
 static void write_cell_bool(uint8_t* buf, int* pos, int col, int xf_id, int val) {
@@ -419,9 +450,29 @@ static uint8_t* generate_filled_sheet(cxlsb_template_filler_t* filler,
         min_col = result->start_col;
     }
     
+    /* 底层维度限制：与批量/流式写入使用同一策略（模板填充也受控）。 */
+    cxlsb_sheet_limits_t limits;
+    if (cxlsb_sheet_limits_begin(max_col + 1, &limits) != CXLSB_OK) {
+        *out_len = 0;
+        return NULL;
+    }
+    int actual_rows = 0;
+    if (cxlsb_sheet_limits_rows(&limits, 0, max_row + 1, &actual_rows) != CXLSB_OK) {
+        *out_len = 0;
+        return NULL;
+    }
+    max_row = actual_rows > 0 ? actual_rows - 1 : 0;
+    max_col = cxlsb_sheet_limits_columns(&limits) - 1;
+    if (max_col < min_col || max_row < start_row) {
+        *out_len = 0;
+        return NULL;
+    }
+
     int num_rows = max_row - start_row + 1;
     int num_cols = max_col - min_col + 1;
-    size_t estimated_size = 100 + num_rows * (50 + num_cols * 20) + parser->merge_count * 20;
+    size_t estimated_size = 100
+        + (size_t)num_rows * ((size_t)50 + (size_t)num_cols * 20)
+        + (size_t)parser->merge_count * 20;
     if (estimated_size < 1024) estimated_size = 1024;
     
     uint8_t* sheet = malloc(estimated_size);
@@ -475,30 +526,33 @@ static uint8_t* generate_filled_sheet(cxlsb_template_filler_t* filler,
         if (row < result->start_row || row >= result->start_row + result->row_count) {
             for (int i = 0; i < parser->cell_count; i++) {
                 cxlsb_cell_info* ci = &parser->cells[i];
-                if (ci->row == row) {
+                if (ci->row == row && ci->col <= max_col) {
                     if (ci->type == 1) {
                         int sst_idx = cxlsb_sst_table_find_string(filler->sst, ci->data.text);
                         if (sst_idx >= 0) {
                             write_cell_isst(sheet, &pos, ci->col, ci->style_index, sst_idx);
                         }
                     } else if (ci->type == 2) {
-                        write_cell_real(sheet, &pos, ci->col, ci->style_index, ci->data.number);
+                        write_cell_number(sheet, &pos, ci->col, ci->style_index, ci->data.number);
                     }
                 }
             }
         }
         
         // Write fill data for rows in fill region
-        if (row >= result->start_row && row < result->start_row + result->row_count) {
+        if (row >= result->start_row && row < result->start_row + result->row_count
+            && result->start_col <= max_col) {
             int data_row = row - result->start_row;
-            for (int col = result->start_col; col < result->start_col + result->col_count; col++) {
+            int fill_end = result->start_col + result->col_count - 1;
+            if (fill_end > max_col) fill_end = max_col;
+            for (int col = result->start_col; col <= fill_end; col++) {
                 int data_col = col - result->start_col;
                 int idx = data_row * result->col_count + data_col;
                 
                 if (result->sst_indices[idx] >= 0) {
                     write_cell_isst(sheet, &pos, col, result->xf_indices[idx], result->sst_indices[idx]);
                 } else {
-                    write_cell_real(sheet, &pos, col, result->xf_indices[idx], 0.0);
+                    write_cell_number(sheet, &pos, col, result->xf_indices[idx], 0.0);
                 }
             }
         }

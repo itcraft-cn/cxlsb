@@ -15,6 +15,9 @@ cxlsb_error_t cxlsb_writer_start_sheet(cxlsb_writer_t* writer, const char* sheet
 cxlsb_error_t cxlsb_writer_write_rows(cxlsb_writer_t* writer, int start_row, cxlsb_cell_supplier_fn supplier, void* user_data, int row_count);
 cxlsb_error_t cxlsb_writer_end_sheet(cxlsb_writer_t* writer);
 
+/** 设置 ZIP 压缩级别（0=store，1-9=deflate；默认 1，速度优先）。 */
+cxlsb_error_t cxlsb_writer_set_compression_level(cxlsb_writer_t* writer, int level);
+
 int cxlsb_writer_get_sheet_count(cxlsb_writer_t* writer);
 cxlsb_error_t cxlsb_writer_close(cxlsb_writer_t* writer);
 

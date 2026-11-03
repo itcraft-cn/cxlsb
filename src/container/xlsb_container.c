@@ -22,7 +22,15 @@ cxlsb_container_t* cxlsb_container_create(const char* path) {
     }
     
     container->is_open = true;
+    container->compression_level = CXLSB_DEFAULT_COMPRESSION_LEVEL;
     return container;
+}
+
+void cxlsb_container_set_compression_level(cxlsb_container_t* container, int level) {
+    if (container == NULL) return;
+    if (level < 0) level = 0;
+    if (level > 9) level = 9;
+    container->compression_level = level;
 }
 
 void cxlsb_container_destroy(cxlsb_container_t* container) {
@@ -51,7 +59,9 @@ cxlsb_error_t cxlsb_container_add_entry(cxlsb_container_t* container,
         return CXLSB_ERR_ZIP_ADD_FAILED;
     }
     
-    if (zip_set_file_compression(container->zip_handle, index, ZIP_CM_DEFLATE, 0) != 0) {
+    uint16_t method = container->compression_level > 0 ? ZIP_CM_DEFLATE : ZIP_CM_STORE;
+    if (zip_set_file_compression(container->zip_handle, index, method,
+                                 container->compression_level) != 0) {
         return CXLSB_ERR_ZIP_ADD_FAILED;
     }
     return CXLSB_OK;

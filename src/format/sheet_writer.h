@@ -4,6 +4,7 @@
 #include "sst_table.h"
 #include "styles_registry.h"
 #include "biff12_writer.h"
+#include "limits.h"
 #include "cxlsb/types.h"
 #include "cxlsb/error_codes.h"
 
@@ -15,6 +16,8 @@ typedef struct cxlsb_sheet_writer {
     int max_row;
     int max_col;
     bool streaming_mode;
+    size_t dim_last_row_offset;
+    cxlsb_sheet_limits_t streaming_limits;
 } cxlsb_sheet_writer_t;
 
 cxlsb_sheet_writer_t* cxlsb_sheet_writer_create(cxlsb_sst_table_t* sst, cxlsb_styles_registry_t* styles);

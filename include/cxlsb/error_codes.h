@@ -8,6 +8,7 @@ typedef enum cxlsb_error {
     CXLSB_ERR_NO_MEMORY = -2,
     CXLSB_ERR_INVALID_ARG = -3,
     CXLSB_ERR_BUFFER_OVERFLOW = -4,
+    CXLSB_ERR_LIMIT_EXCEEDED = -5,
     
     CXLSB_ERR_FILE_NOT_FOUND = -10,
     CXLSB_ERR_FILE_OPEN_FAILED = -11,

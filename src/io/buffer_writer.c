@@ -189,3 +189,16 @@ size_t cxlsb_buffer_writer_get_length(cxlsb_buffer_writer_t* writer) {
 void cxlsb_buffer_writer_reset(cxlsb_buffer_writer_t* writer) {
     writer->position = 0;
 }
+
+cxlsb_error_t cxlsb_buffer_writer_set_u32_at(cxlsb_buffer_writer_t* writer,
+                                             size_t offset,
+                                             uint32_t value) {
+    if (writer == NULL) return CXLSB_ERR_NULL_PTR;
+    if (offset + 4 > writer->position) return CXLSB_ERR_INVALID_ARG;
+
+    writer->buffer[offset] = (uint8_t)(value & 0xFF);
+    writer->buffer[offset + 1] = (uint8_t)((value >> 8) & 0xFF);
+    writer->buffer[offset + 2] = (uint8_t)((value >> 16) & 0xFF);
+    writer->buffer[offset + 3] = (uint8_t)((value >> 24) & 0xFF);
+    return CXLSB_OK;
+}

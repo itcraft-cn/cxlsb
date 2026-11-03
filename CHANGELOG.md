@@ -12,6 +12,22 @@
 ### 新增
 
 - LICENSE 文件
+- **行列上限溢出策略**（与 rxlsb 对齐）：`CXLSB_MAX_COLUMNS = 16384`、`CXLSB_MAX_ROWS = 1048576`；
+  `cxlsb_set_column_overflow/set_row_overflow/set_overflow`，`CXLSB_OVERFLOW_ERROR/CUT`；
+  每次写入通过 `cxlsb_sheet_limits_*` 快照，超限返回 `CXLSB_ERR_LIMIT_EXCEEDED` 或截断
+- 写入器 ZIP 压缩级别可配置：`cxlsb_writer_set_compression_level`，默认 **1（速度优先）**
+- RK 写入支持（整数且 |n| < 2^29），读取器补上 `BrtCellRk` 解析
+
+### 修复
+
+- `BrtWsFmtInfo` 记录类型修正为 **485**（旧值 229 会导致 WPS 只显示第一行）
+- `BrtWsDim` 字段顺序修正为 first_row/last_row/first_col/last_col；流式写入改为前导占位、结束时回填
+- `BrtRowHdr` 支持 >1024 列的多 span，读取端按最后一个 span 计算列范围
+- `BrtCellSt` 布局修正（不再多写 1 字节 flags）；SST 序列化字符数按 UTF-16 码元计算
+- SST 读取改为一次边界检查 + 顺序解码，并正确处理 UTF-16 代理对
+- 空白单元格不再写入 `BrtCellBlank`
+- 模板填充统一受行列上限约束（维度裁剪、超限单元格/填充列跳过）
+- RK 编码/解码改为标准整数形式（bit1=fInt，bit0=fX100）
 
 ### 变更
 

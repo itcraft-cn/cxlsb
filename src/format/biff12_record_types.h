@@ -30,7 +30,7 @@
 #define BIFF12_BRT_END_SHEET_DATA    146
 #define BIFF12_BRT_WS_PROP           147
 #define BIFF12_BRT_WS_DIM            148
-#define BIFF12_BRT_WS_FMT_INFO       229
+#define BIFF12_BRT_WS_FMT_INFO       485
 #define BIFF12_BRT_WB_PROP           153
 #define BIFF12_BRT_BUNDLE_SH         156
 #define BIFF12_BRT_BOOK_VIEW         158

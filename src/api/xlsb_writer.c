@@ -164,6 +164,13 @@ cxlsb_error_t cxlsb_writer_end_sheet(cxlsb_writer_t* writer) {
     return CXLSB_OK;
 }
 
+cxlsb_error_t cxlsb_writer_set_compression_level(cxlsb_writer_t* writer, int level) {
+    if (writer == NULL) return CXLSB_ERR_NULL_PTR;
+    if (level < 0 || level > 9) return CXLSB_ERR_INVALID_ARG;
+    cxlsb_container_set_compression_level(writer->container, level);
+    return CXLSB_OK;
+}
+
 int cxlsb_writer_get_sheet_count(cxlsb_writer_t* writer) {
     return writer == NULL ? -1 : writer->sheet_count;
 }

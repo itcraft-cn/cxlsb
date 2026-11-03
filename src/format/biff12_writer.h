@@ -36,6 +36,11 @@ cxlsb_error_t cxlsb_biff12_writer_write_cell_rk(cxlsb_biff12_writer_t* writer,
                                                  uint32_t row, uint32_t col,
                                                  double value, uint32_t xf_id);
 
+/** 按数值特点自动选择 RK（整数、|n| < 2^29）或 Real。 */
+cxlsb_error_t cxlsb_biff12_writer_write_cell_number(cxlsb_biff12_writer_t* writer,
+                                                     uint32_t row, uint32_t col,
+                                                     double value, uint32_t xf_id);
+
 cxlsb_error_t cxlsb_biff12_writer_write_cell_st(cxlsb_biff12_writer_t* writer,
                                                  uint32_t row, uint32_t col,
                                                  const char* str, uint32_t xf_id);
@@ -54,13 +59,12 @@ cxlsb_error_t cxlsb_biff12_writer_write_cell_blank(cxlsb_biff12_writer_t* writer
 
 cxlsb_error_t cxlsb_biff12_writer_write_row_header(cxlsb_biff12_writer_t* writer,
                                                     uint32_t row, 
-                                                    uint32_t first_col,
-                                                    uint32_t last_col);
+                                                    uint32_t col_count);
 
 cxlsb_error_t cxlsb_biff12_writer_write_ws_dim(cxlsb_biff12_writer_t* writer,
                                                 uint32_t first_row,
-                                                uint32_t first_col,
                                                 uint32_t last_row,
+                                                uint32_t first_col,
                                                 uint32_t last_col);
 
 const uint8_t* cxlsb_biff12_writer_get_buffer(cxlsb_biff12_writer_t* writer);

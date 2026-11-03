@@ -42,6 +42,11 @@ size_t cxlsb_buffer_writer_get_length(cxlsb_buffer_writer_t* writer);
 
 void cxlsb_buffer_writer_reset(cxlsb_buffer_writer_t* writer);
 
+/** 在指定偏移回填一个小端 u32（用于事后修补维度等字段）。 */
+cxlsb_error_t cxlsb_buffer_writer_set_u32_at(cxlsb_buffer_writer_t* writer,
+                                             size_t offset,
+                                             uint32_t value);
+
 cxlsb_error_t cxlsb_buffer_writer_ensure_capacity(cxlsb_buffer_writer_t* writer, 
                                                    size_t required);
 

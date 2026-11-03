@@ -120,7 +120,7 @@ cxlsb_error_t cxlsb_sst_table_serialize(cxlsb_sst_table_t* table, cxlsb_biff12_w
         err = cxlsb_biff12_writer_write_record_header(writer, BIFF12_BRT_SST_ITEM, sst_item_size);
         if (err != CXLSB_OK) return err;
         cxlsb_buffer_writer_write_byte(writer->buffer, 0);
-        cxlsb_buffer_writer_write_int(writer->buffer, (uint32_t)strlen(str));
+        cxlsb_buffer_writer_write_int(writer->buffer, (uint32_t)(utf16_len / 2));
         
         uint8_t* utf16_buf = (uint8_t*)malloc(utf16_len);
         if (utf16_buf == NULL) return CXLSB_ERR_NO_MEMORY;
@@ -148,27 +148,47 @@ cxlsb_error_t cxlsb_sst_table_load(cxlsb_sst_table_t* table, const uint8_t* data
         if (pos + record_size > len) break;
         
         if (record_type == BIFF12_BRT_SST_ITEM) {
+            if (record_size < 5) { pos += record_size; continue; }
             int encoding = data[pos];
             pos++;
             uint32_t str_len = data[pos] | (data[pos+1]<<8) | (data[pos+2]<<16) | (data[pos+3]<<24);
             pos += 4;
             
             if (encoding == 0) {
-                uint8_t* utf8_buf = (uint8_t*)malloc(str_len * 4 + 1);
+                /* 一次边界检查后顺序解码，避免逐码元重复校验。 */
+                size_t byte_len = (size_t)str_len * 2;
+                if (byte_len > record_size - 5) break;
+
+                uint8_t* utf8_buf = (uint8_t*)malloc(byte_len * 3 + 1);
                 if (utf8_buf == NULL) return CXLSB_ERR_NO_MEMORY;
-                
+
                 size_t utf8_len = 0;
-                for (uint32_t i = 0; i < str_len; i++) {
-                    uint16_t ch = data[pos + i*2] | (data[pos + i*2 + 1] << 8);
-                    if (ch < 0x80) {
-                        utf8_buf[utf8_len++] = ch;
-                    } else if (ch < 0x800) {
-                        utf8_buf[utf8_len++] = 0xC0 | (ch >> 6);
-                        utf8_buf[utf8_len++] = 0x80 | (ch & 0x3F);
+                const uint8_t* src = data + pos;
+                uint32_t i = 0;
+                while (i < str_len) {
+                    uint32_t cp = (uint32_t)(src[i * 2] | (src[i * 2 + 1] << 8));
+                    i++;
+                    if (cp >= 0xD800 && cp <= 0xDBFF && i < str_len) {
+                        uint32_t lo = (uint32_t)(src[i * 2] | (src[i * 2 + 1] << 8));
+                        if (lo >= 0xDC00 && lo <= 0xDFFF) {
+                            cp = 0x10000 + ((cp - 0xD800) << 10) + (lo - 0xDC00);
+                            i++;
+                        }
+                    }
+                    if (cp < 0x80) {
+                        utf8_buf[utf8_len++] = (uint8_t)cp;
+                    } else if (cp < 0x800) {
+                        utf8_buf[utf8_len++] = (uint8_t)(0xC0 | (cp >> 6));
+                        utf8_buf[utf8_len++] = (uint8_t)(0x80 | (cp & 0x3F));
+                    } else if (cp < 0x10000) {
+                        utf8_buf[utf8_len++] = (uint8_t)(0xE0 | (cp >> 12));
+                        utf8_buf[utf8_len++] = (uint8_t)(0x80 | ((cp >> 6) & 0x3F));
+                        utf8_buf[utf8_len++] = (uint8_t)(0x80 | (cp & 0x3F));
                     } else {
-                        utf8_buf[utf8_len++] = 0xE0 | (ch >> 12);
-                        utf8_buf[utf8_len++] = 0x80 | ((ch >> 6) & 0x3F);
-                        utf8_buf[utf8_len++] = 0x80 | (ch & 0x3F);
+                        utf8_buf[utf8_len++] = (uint8_t)(0xF0 | (cp >> 18));
+                        utf8_buf[utf8_len++] = (uint8_t)(0x80 | ((cp >> 12) & 0x3F));
+                        utf8_buf[utf8_len++] = (uint8_t)(0x80 | ((cp >> 6) & 0x3F));
+                        utf8_buf[utf8_len++] = (uint8_t)(0x80 | (cp & 0x3F));
                     }
                 }
                 utf8_buf[utf8_len] = '\0';

@@ -1,5 +1,6 @@
 #include "sheet_parser.h"
 #include "biff12_record_types.h"
+#include "../util/utf16.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -30,8 +31,9 @@ static int read_style_index(const uint8_t* buf, int offset) {
 }
 
 static double decode_rk(int rk_value) {
-    int is_int = rk_value & 1;
-    int div100 = rk_value & 2;
+    /* 标准 RK：bit1=fInt，bit0=fX100。 */
+    int is_int = rk_value & 2;
+    int div100 = rk_value & 1;
     int value_bits = rk_value & 0xFFFFFFFC;
     double value;
     if (is_int) {
@@ -86,6 +88,31 @@ cxlsb_sheet_parser* cxlsb_sheet_parser_create(const uint8_t* data, size_t len, c
                 break;
             }
             
+            case BIFF12_BRT_CELL_ST: {
+                int col = read_int32_le(data, pos);
+                int style_idx = read_style_index(data, pos);
+                int cch = read_int32_le(data, pos + 8);
+                if (cch > 0 && 12 + cch * 2 <= record_size) {
+                    size_t utf16_bytes = (size_t)cch * 2;
+                    char* text = cxlsb_utf16le_to_utf8(data + pos + 12, utf16_bytes);
+                    if (text != NULL) {
+                        if (parser->cell_count >= parser->cell_capacity) {
+                            parser->cell_capacity *= 2;
+                            parser->cells = realloc(parser->cells,
+                                                    parser->cell_capacity * sizeof(cxlsb_cell_info));
+                        }
+                        cxlsb_cell_info* ci = &parser->cells[parser->cell_count++];
+                        ci->row = current_row;
+                        ci->col = col;
+                        ci->type = 1;
+                        ci->style_index = style_idx;
+                        ci->data.text = text;
+                        if (col > parser->max_col) parser->max_col = col;
+                    }
+                }
+                break;
+            }
+
             case BIFF12_BRT_CELL_REAL: {
                 int col = read_int32_le(data, pos);
                 int style_idx = read_style_index(data, pos);

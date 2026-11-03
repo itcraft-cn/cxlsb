@@ -9,6 +9,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* 标准 RK：bit1=fInt，bit0=fX100，其余 30 位为数值或 f64 高 32 位。 */
+static double decode_rk(uint32_t rk) {
+    int is_int = (rk & 0x02) != 0;
+    int div100 = (rk & 0x01) != 0;
+    if (is_int) {
+        int32_t v = (int32_t)rk >> 2;
+        return div100 ? (double)v / 100.0 : (double)v;
+    }
+    uint64_t bits = ((uint64_t)(rk & 0xFFFFFFFC)) << 32;
+    double value;
+    memcpy(&value, &bits, sizeof(double));
+    return div100 ? value / 100.0 : value;
+}
+
 struct cxlsb_reader {
     cxlsb_container_reader_t* container;
     cxlsb_sst_table_t* sst;
@@ -173,9 +187,11 @@ cxlsb_error_t cxlsb_reader_for_each_row(cxlsb_reader_t* reader, int sheet_index,
             uint32_t ccolspan = cxlsb_buffer_reader_read_int(sheet_stream);
             first_col = 0;
             uint32_t last_col = 0;
-            if (ccolspan > 0) {
-                first_col = cxlsb_buffer_reader_read_int(sheet_stream);
-                last_col = cxlsb_buffer_reader_read_int(sheet_stream);
+            for (uint32_t span = 0; span < ccolspan; span++) {
+                uint32_t mic = cxlsb_buffer_reader_read_int(sheet_stream);
+                uint32_t mac = cxlsb_buffer_reader_read_int(sheet_stream);
+                if (span == 0) first_col = mic;
+                if (span + 1 == ccolspan) last_col = mac;
             }
             col_count = last_col - first_col + 1;
             cells = (cxlsb_cell_data_t*)malloc(sizeof(cxlsb_cell_data_t) * col_count);
@@ -194,6 +210,16 @@ cxlsb_error_t cxlsb_reader_for_each_row(cxlsb_reader_t* reader, int sheet_index,
             double val = cxlsb_buffer_reader_read_double(sheet_stream);
             if (col >= first_col && col - first_col < (uint32_t)col_count) 
                 cells[col - first_col] = cxlsb_cell_number(val);
+        } else if (type == BIFF12_BRT_CELL_RK && cells != NULL) {
+            cells_ready = true;
+            uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);
+            uint32_t rk = cxlsb_buffer_reader_read_int(sheet_stream);
+            if (col >= first_col && col - first_col < (uint32_t)col_count)
+                cells[col - first_col] = cxlsb_cell_number(decode_rk(rk));
         } else if (type == BIFF12_BRT_CELL_ISST && cells != NULL) {
             cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
@@ -213,7 +239,6 @@ cxlsb_error_t cxlsb_reader_for_each_row(cxlsb_reader_t* reader, int sheet_index,
         } else if (type == BIFF12_BRT_CELL_ST && cells != NULL) {
             cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
-            cxlsb_buffer_reader_read_byte(sheet_stream);
             cxlsb_buffer_reader_read_byte(sheet_stream);
             cxlsb_buffer_reader_read_byte(sheet_stream);
             cxlsb_buffer_reader_read_byte(sheet_stream);
@@ -326,9 +351,11 @@ cxlsb_error_t cxlsb_reader_read_page(cxlsb_reader_t* reader, int sheet_index,
             uint32_t ccolspan = cxlsb_buffer_reader_read_int(sheet_stream);
             first_col = 0;
             uint32_t last_col = 0;
-            if (ccolspan > 0) {
-                first_col = cxlsb_buffer_reader_read_int(sheet_stream);
-                last_col = cxlsb_buffer_reader_read_int(sheet_stream);
+            for (uint32_t span = 0; span < ccolspan; span++) {
+                uint32_t mic = cxlsb_buffer_reader_read_int(sheet_stream);
+                uint32_t mac = cxlsb_buffer_reader_read_int(sheet_stream);
+                if (span == 0) first_col = mic;
+                if (span + 1 == ccolspan) last_col = mac;
             }
             col_count = last_col - first_col + 1;
             cells = (cxlsb_cell_data_t*)malloc(sizeof(cxlsb_cell_data_t) * col_count);
@@ -347,6 +374,16 @@ cxlsb_error_t cxlsb_reader_read_page(cxlsb_reader_t* reader, int sheet_index,
             double val = cxlsb_buffer_reader_read_double(sheet_stream);
             if (col >= first_col && col - first_col < (uint32_t)col_count) 
                 cells[col - first_col] = cxlsb_cell_number(val);
+        } else if (type == BIFF12_BRT_CELL_RK && cells != NULL) {
+            cells_ready = true;
+            uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);
+            cxlsb_buffer_reader_read_byte(sheet_stream);
+            uint32_t rk = cxlsb_buffer_reader_read_int(sheet_stream);
+            if (col >= first_col && col - first_col < (uint32_t)col_count)
+                cells[col - first_col] = cxlsb_cell_number(decode_rk(rk));
         } else if (type == BIFF12_BRT_CELL_ISST && cells != NULL) {
             cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
@@ -365,7 +402,6 @@ cxlsb_error_t cxlsb_reader_read_page(cxlsb_reader_t* reader, int sheet_index,
         } else if (type == BIFF12_BRT_CELL_ST && cells != NULL) {
             cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(sheet_stream);
-            cxlsb_buffer_reader_read_byte(sheet_stream);
             cxlsb_buffer_reader_read_byte(sheet_stream);
             cxlsb_buffer_reader_read_byte(sheet_stream);
             cxlsb_buffer_reader_read_byte(sheet_stream);
@@ -495,9 +531,11 @@ cxlsb_error_t cxlsb_reader_read_batch(cxlsb_reader_t* reader, int batch_size,
             uint32_t ccolspan = cxlsb_buffer_reader_read_int(reader->stream);
             reader->first_col = 0;
             uint32_t last_col = 0;
-            if (ccolspan > 0) {
-                reader->first_col = cxlsb_buffer_reader_read_int(reader->stream);
-                last_col = cxlsb_buffer_reader_read_int(reader->stream);
+            for (uint32_t span = 0; span < ccolspan; span++) {
+                uint32_t mic = cxlsb_buffer_reader_read_int(reader->stream);
+                uint32_t mac = cxlsb_buffer_reader_read_int(reader->stream);
+                if (span == 0) reader->first_col = mic;
+                if (span + 1 == ccolspan) last_col = mac;
             }
             reader->col_count = last_col - reader->first_col + 1;
             reader->pending_cells = (cxlsb_cell_data_t*)malloc(sizeof(cxlsb_cell_data_t) * reader->col_count);
@@ -513,6 +551,16 @@ cxlsb_error_t cxlsb_reader_read_batch(cxlsb_reader_t* reader, int batch_size,
             double val = cxlsb_buffer_reader_read_double(reader->stream);
             if (col >= reader->first_col && col - reader->first_col < (uint32_t)reader->col_count) 
                 reader->pending_cells[col - reader->first_col] = cxlsb_cell_number(val);
+        } else if (type == BIFF12_BRT_CELL_RK && reader->pending_cells != NULL) {
+            reader->cells_ready = true;
+            uint32_t col = cxlsb_buffer_reader_read_int(reader->stream);
+            cxlsb_buffer_reader_read_byte(reader->stream);
+            cxlsb_buffer_reader_read_byte(reader->stream);
+            cxlsb_buffer_reader_read_byte(reader->stream);
+            cxlsb_buffer_reader_read_byte(reader->stream);
+            uint32_t rk = cxlsb_buffer_reader_read_int(reader->stream);
+            if (col >= reader->first_col && col - reader->first_col < (uint32_t)reader->col_count)
+                reader->pending_cells[col - reader->first_col] = cxlsb_cell_number(decode_rk(rk));
         } else if (type == BIFF12_BRT_CELL_ISST && reader->pending_cells != NULL) {
             reader->cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(reader->stream);
@@ -531,7 +579,6 @@ cxlsb_error_t cxlsb_reader_read_batch(cxlsb_reader_t* reader, int batch_size,
         } else if (type == BIFF12_BRT_CELL_ST && reader->pending_cells != NULL) {
             reader->cells_ready = true;
             uint32_t col = cxlsb_buffer_reader_read_int(reader->stream);
-            cxlsb_buffer_reader_read_byte(reader->stream);
             cxlsb_buffer_reader_read_byte(reader->stream);
             cxlsb_buffer_reader_read_byte(reader->stream);
             cxlsb_buffer_reader_read_byte(reader->stream);
