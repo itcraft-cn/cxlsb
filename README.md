@@ -24,6 +24,8 @@
 - **功能完整**: 与 Java jxlsb 实现对齐
 - **函数式 API**: 纯函数 + 回调指针，灵活易用
 - **内存安全**: 完整的 malloc NULL 检查，create/destroy 模式
+- **行列上限策略**: 16384 列 × 1048576 行，`Error` / `Cut` 可选
+- **压缩级别可调**: ZIP 压缩 0-9，默认 1（速度优先）
 
 ## 支持操作
 
@@ -197,6 +199,22 @@ typedef enum {
 ```
 
 使用 `cxlsb_error_string(err)` 获取可读错误描述。
+
+## 行列上限与压缩级别
+
+```c
+#include "cxlsb/limits.h"
+
+/* 列超限截断、行超限报错（全局配置，每次写入开始时快照） */
+cxlsb_set_overflow(CXLSB_OVERFLOW_CUT, CXLSB_OVERFLOW_ERROR);
+
+cxlsb_writer_t* writer = cxlsb_writer_create("output.xlsb");
+cxlsb_writer_set_compression_level(writer, 6);  /* 0=store，1-9=deflate；默认 1 */
+```
+
+- 上限常量：`CXLSB_MAX_COLUMNS = 16384`、`CXLSB_MAX_ROWS = 1048576`
+- 超限行为：`CXLSB_OVERFLOW_ERROR` 返回 `CXLSB_ERR_LIMIT_EXCEEDED`，`CXLSB_OVERFLOW_CUT` 截断
+- 批量写、流式写、模板填充均受同一策略约束
 
 ## 项目结构
 

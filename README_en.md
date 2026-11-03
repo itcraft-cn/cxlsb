@@ -24,6 +24,8 @@ Viewed from this narrow, output-oriented angle, XLSX is simply not needed — XL
 - **Full Functionality**: Feature-aligned with Java jxlsb implementation
 - **Functional API**: Pure functions with callback pointers for flexibility
 - **Memory Safe**: Complete malloc NULL checks, create/destroy pattern
+- **Row/Column Limit Policy**: 16384 columns × 1048576 rows, `Error` or `Cut`
+- **Configurable Compression**: ZIP level 0-9, default 1 (speed first)
 
 ## Supported Operations
 
@@ -197,6 +199,22 @@ typedef enum {
 ```
 
 Use `cxlsb_error_string(err)` to get human-readable error description.
+
+## Row/Column Limits and Compression
+
+```c
+#include "cxlsb/limits.h"
+
+/* Cut on column overflow, error on row overflow (global, snapshotted per write) */
+cxlsb_set_overflow(CXLSB_OVERFLOW_CUT, CXLSB_OVERFLOW_ERROR);
+
+cxlsb_writer_t* writer = cxlsb_writer_create("output.xlsb");
+cxlsb_writer_set_compression_level(writer, 6);  /* 0=store, 1-9=deflate; default 1 */
+```
+
+- Limits: `CXLSB_MAX_COLUMNS = 16384`, `CXLSB_MAX_ROWS = 1048576`
+- `CXLSB_OVERFLOW_ERROR` returns `CXLSB_ERR_LIMIT_EXCEEDED`; `CXLSB_OVERFLOW_CUT` truncates
+- Batch writes, streaming writes and template filling share the same policy
 
 ## Project Structure
 

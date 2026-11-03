@@ -138,6 +138,25 @@ int main() {
 }
 ```
 
+Filled values keep their type: text uses SST, numbers/dates use RK/Real, booleans use Bool; blank cells emit no record.
+
+### 4.5 Row/Column Limits and Compression
+
+```c
+#include "cxlsb/limits.h"
+
+/* Cut on column overflow, error on row overflow (global, snapshotted per write) */
+cxlsb_set_overflow(CXLSB_OVERFLOW_CUT, CXLSB_OVERFLOW_ERROR);
+
+cxlsb_writer_t* writer = cxlsb_writer_create("output.xlsb");
+cxlsb_writer_set_compression_level(writer, 6);  /* 0=store, 1-9=deflate; default 1 */
+```
+
+- Limits: `CXLSB_MAX_COLUMNS = 16384`, `CXLSB_MAX_ROWS = 1048576`
+- `CXLSB_OVERFLOW_ERROR` returns `CXLSB_ERR_LIMIT_EXCEEDED`; `CXLSB_OVERFLOW_CUT` truncates
+- Configuration is global and snapshotted when each write operation starts
+- Batch writes, streaming writes and template filling share the same policy
+
 ## 5. Supported Operations
 
 | Feature | API | Description |

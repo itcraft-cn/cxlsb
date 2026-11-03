@@ -138,6 +138,25 @@ int main() {
 }
 ```
 
+填充值按类型写入：文本走 SST，数值/日期走 RK/Real，布尔走 Bool；空白单元格不生成记录。
+
+### 4.5 行列上限与压缩级别
+
+```c
+#include "cxlsb/limits.h"
+
+/* 列超限截断、行超限报错（全局配置，每次写入开始时快照） */
+cxlsb_set_overflow(CXLSB_OVERFLOW_CUT, CXLSB_OVERFLOW_ERROR);
+
+cxlsb_writer_t* writer = cxlsb_writer_create("output.xlsb");
+cxlsb_writer_set_compression_level(writer, 6);  /* 0=store，1-9=deflate；默认 1 */
+```
+
+- 上限常量：`CXLSB_MAX_COLUMNS = 16384`、`CXLSB_MAX_ROWS = 1048576`
+- `CXLSB_OVERFLOW_ERROR` 返回 `CXLSB_ERR_LIMIT_EXCEEDED`，`CXLSB_OVERFLOW_CUT` 截断到上限
+- 配置是全局的，每次写入操作开始时快照，只影响之后的操作
+- 批量写、流式写、模板填充均受同一策略约束
+
 ## 5. 支持的操作
 
 | 功能 | API | 描述 |
