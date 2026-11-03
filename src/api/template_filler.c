@@ -289,6 +289,8 @@ void cxlsb_template_filler_destroy(cxlsb_template_filler_t* filler) {
         if (filler->sheet_datas[i]) free(filler->sheet_datas[i]);
         if (filler->fill_results[i].sst_indices) free(filler->fill_results[i].sst_indices);
         if (filler->fill_results[i].xf_indices) free(filler->fill_results[i].xf_indices);
+        if (filler->fill_results[i].cell_types) free(filler->fill_results[i].cell_types);
+        if (filler->fill_results[i].numbers) free(filler->fill_results[i].numbers);
     }
     free(filler->sheets);
     free(filler->sheet_names);
@@ -360,33 +362,61 @@ cxlsb_error_t cxlsb_template_filler_fill_index(cxlsb_template_filler_t* filler,
     if (!supplier) return CXLSB_ERR_NULL_PTR;
     
     cxlsb_fill_result_t* result = &filler->fill_results[sheet_index];
+
+    /* 重复填充时先释放上一轮缓冲。 */
+    free(result->sst_indices);
+    free(result->xf_indices);
+    free(result->cell_types);
+    free(result->numbers);
+    result->sst_indices = NULL;
+    result->xf_indices = NULL;
+    result->cell_types = NULL;
+    result->numbers = NULL;
+
+    size_t count = (size_t)row_count * (size_t)col_count;
     result->start_row = start_row;
     result->start_col = start_col;
     result->row_count = row_count;
     result->col_count = col_count;
-    result->sst_indices = malloc(row_count * col_count * sizeof(int));
-    if (!result->sst_indices) return CXLSB_ERR_NO_MEMORY;
-    result->xf_indices = malloc(row_count * col_count * sizeof(int));
-    if (!result->xf_indices) {
+    result->sst_indices = malloc(count * sizeof(int));
+    result->xf_indices = malloc(count * sizeof(int));
+    result->cell_types = malloc(count * sizeof(int));
+    result->numbers = malloc(count * sizeof(double));
+    if (!result->sst_indices || !result->xf_indices || !result->cell_types || !result->numbers) {
         free(result->sst_indices);
+        free(result->xf_indices);
+        free(result->cell_types);
+        free(result->numbers);
         result->sst_indices = NULL;
+        result->xf_indices = NULL;
+        result->cell_types = NULL;
+        result->numbers = NULL;
         return CXLSB_ERR_NO_MEMORY;
     }
     
     for (int r = 0; r < row_count; r++) {
         for (int c = 0; c < col_count; c++) {
             cxlsb_cell_data_t cell = supplier(r, c, user_data);
-            int idx = r * col_count + c;
+            size_t idx = (size_t)r * (size_t)col_count + (size_t)c;
             
-            if (cell.type == CXLSB_CELL_TEXT) {
-                result->sst_indices[idx] = cxlsb_sst_table_add_string(filler->sst, cell.value.text);
-                result->xf_indices[idx] = 0;
-            } else if (cell.type == CXLSB_CELL_NUMBER) {
-                result->sst_indices[idx] = -1;
-                result->xf_indices[idx] = 0;
-            } else {
-                result->sst_indices[idx] = -1;
-                result->xf_indices[idx] = 0;
+            result->sst_indices[idx] = -1;
+            result->xf_indices[idx] = cell.style_index;
+            result->cell_types[idx] = cell.type;
+            result->numbers[idx] = 0.0;
+
+            switch (cell.type) {
+                case CXLSB_CELL_TEXT:
+                    result->sst_indices[idx] = cxlsb_sst_table_add_string(filler->sst, cell.value.text);
+                    break;
+                case CXLSB_CELL_NUMBER:
+                case CXLSB_CELL_DATE:
+                    result->numbers[idx] = cell.value.number;
+                    break;
+                case CXLSB_CELL_BOOL:
+                    result->numbers[idx] = cell.value.boolean ? 1.0 : 0.0;
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -549,10 +579,26 @@ static uint8_t* generate_filled_sheet(cxlsb_template_filler_t* filler,
                 int data_col = col - result->start_col;
                 int idx = data_row * result->col_count + data_col;
                 
-                if (result->sst_indices[idx] >= 0) {
-                    write_cell_isst(sheet, &pos, col, result->xf_indices[idx], result->sst_indices[idx]);
-                } else {
-                    write_cell_number(sheet, &pos, col, result->xf_indices[idx], 0.0);
+                switch (result->cell_types[idx]) {
+                    case CXLSB_CELL_TEXT:
+                        if (result->sst_indices[idx] >= 0) {
+                            write_cell_isst(sheet, &pos, col,
+                                            result->xf_indices[idx], result->sst_indices[idx]);
+                        }
+                        break;
+                    case CXLSB_CELL_NUMBER:
+                    case CXLSB_CELL_DATE:
+                        write_cell_number(sheet, &pos, col,
+                                          result->xf_indices[idx], result->numbers[idx]);
+                        break;
+                    case CXLSB_CELL_BOOL:
+                        write_cell_bool(sheet, &pos, col,
+                                        result->xf_indices[idx],
+                                        result->numbers[idx] != 0.0);
+                        break;
+                    default:
+                        /* 空白单元格不生成记录。 */
+                        break;
                 }
             }
         }

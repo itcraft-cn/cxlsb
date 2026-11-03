@@ -11,8 +11,10 @@ struct cxlsb_fill_result {
     int start_col;
     int row_count;
     int col_count;
-    int* sst_indices;  // SST indices for filled cells [row_count * col_count]
-    int* xf_indices;   // Style indices for filled cells
+    int* sst_indices;    // SST indices for text cells [row_count * col_count]
+    int* xf_indices;     // Style indices for filled cells
+    int* cell_types;     // cxlsb_cell_type_t for each filled cell
+    double* numbers;     // 数值/日期/布尔值（布尔用 0/1）
 };
 
 typedef struct cxlsb_template_filler cxlsb_template_filler_t;

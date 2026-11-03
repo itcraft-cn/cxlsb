@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SST reading uses one bounds check, sequential decode, and handles UTF-16 surrogate pairs
 - Blank cells no longer emit `BrtCellBlank`
 - Template filling honors row/column limits
+- Fixed numeric values being lost during template filling: `cxlsb_fill_result` now carries
+  `cell_types`/`numbers`, so numbers, dates and booleans are no longer written as 0
+- Free the previous fill buffers when filling the same sheet again
 - RK encoding/decoding uses the standard integer form (bit1=fInt, bit0=fX100)
 
 ### Changed
