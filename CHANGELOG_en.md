@@ -8,13 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Version numbers follow the Git tags `vX.Y.Z_YYYYMMDD`.
 
-## [Unreleased]
-
-### Changed
-
-- Docs: synchronized README / MANUAL with the current API, adding paged and streaming reads plus number format and style notes; test count updated to 15
-- Docs: reorganized version history to align with the Git tags `v0.1.0` and `v0.2.0`
-
 ## [0.2.0] - 2026-11-09
 
 ### Added
@@ -47,6 +40,8 @@ Version numbers follow the Git tags `vX.Y.Z_YYYYMMDD`.
 ### Changed
 
 - All text now goes to the SST by default; inline `BrtCellSt` is only a fallback when SST is unavailable
+- Docs: synchronized README / MANUAL with the current API, adding paged and streaming reads plus number format and style notes; test count updated to 15
+- Docs: reorganized version history to align with the Git tags `v0.1.0` and `v0.2.0`
 - Documentation layout unified as bilingual (README / CHANGELOG / MANUAL with cross-links)
 - Documentation: added "Design Positioning" section
 - Version: bumped from 0.1.0 to 0.2.0
