@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CXLSB_OVERFLOW_ERROR/CUT`, returning `CXLSB_ERR_LIMIT_EXCEEDED` or truncating
 - Configurable ZIP compression level: `cxlsb_writer_set_compression_level`, default **1**
 - RK writing for integral numbers and `BrtCellRk` parsing in the reader
+- Number formats and styles: `cxlsb_writer_add_format` / `cxlsb_writer_add_style`,
+  per-cell `style_index` and `cxlsb_cell_*_with_style` constructors
+- Paged reading via `cxlsb_reader_read_page` and streaming reads via
+  `cxlsb_reader_start_streaming/read_batch/end_streaming`
 
 ### Fixed
 
@@ -35,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Documentation: added "Design Positioning" section
+- Documentation: synchronized the test suite (15 tests) and API list
 - Version: moved to 0.2.0
 
 ## [1.0.0] - 2026-04-28
@@ -109,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 0.2.0 | 2026-11-09 | Unreleased: format and limit policy alignment |
 | 1.0.0 | 2026-04-28 | Production release, all tests passing |
 | 0.9.0 | 2026-04-27 | Streaming and template fill |
 | 0.8.0 | 2026-04-26 | Basic read/write functionality |
@@ -117,8 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Roadmap
 
 ### [1.1.0] - Planned
-- Pagination API with offset/limit parameters
-- Cell style support (fonts, fills, borders)
+- Cell font/fill/border styles (number formats and XF style indices are already supported)
 - Conditional formatting
 - Formula support (read-only)
 - Merged cells in streaming mode
@@ -134,3 +139,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Encryption support
 - Compression optimization
 - Async I/O support
+
+## Related Documents
+
+- [README.md](README.md) (Chinese) / [README_en.md](README_en.md) (English)
+- [MANUAL.md](MANUAL.md) (Chinese) / [MANUAL_en.md](MANUAL_en.md) (English)

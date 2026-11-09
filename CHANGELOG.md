@@ -17,6 +17,8 @@
   每次写入通过 `cxlsb_sheet_limits_*` 快照，超限返回 `CXLSB_ERR_LIMIT_EXCEEDED` 或截断
 - 写入器 ZIP 压缩级别可配置：`cxlsb_writer_set_compression_level`，默认 **1（速度优先）**
 - RK 写入支持（整数且 |n| < 2^29），读取器补上 `BrtCellRk` 解析
+- 数字格式与样式：`cxlsb_writer_add_format` / `cxlsb_writer_add_style`，单元格 `style_index` 与 `cxlsb_cell_*_with_style` 构造
+- 分页读取 `cxlsb_reader_read_page` 与流式读取 `cxlsb_reader_start_streaming/read_batch/end_streaming`
 
 ### 修复
 
@@ -34,6 +36,7 @@
 ### 变更
 
 - 文档：新增「设计定位」章节
+- 文档：同步测试套件（15 个测试）与 API 清单
 - 版本：进入 0.2.0
 
 ## [1.0.0] - 2026-04-28
@@ -108,6 +111,7 @@
 
 | 版本 | 日期 | 描述 |
 |------|------|------|
+| 0.2.0 | 2026-11-09 | 未发布：格式与上限策略对齐 |
 | 1.0.0 | 2026-04-28 | 生产发布，全部测试通过 |
 | 0.9.0 | 2026-04-27 | 流式与模板填充 |
 | 0.8.0 | 2026-04-26 | 基础读写功能 |
@@ -116,8 +120,7 @@
 ## 路线图
 
 ### [1.1.0] - 计划中
-- 带 offset/limit 参数的分页 API
-- 单元格样式支持（字体、填充、边框）
+- 单元格字体/填充/边框样式（当前已支持数字格式与 XF 样式索引）
 - 条件格式
 - 公式支持（只读）
 - 流式模式下的合并单元格

@@ -112,7 +112,23 @@ int main() {
 }
 ```
 
-### 4.4 模板填充
+### 4.4 分页与流式读取
+
+```c
+#include "cxlsb/xlsb_reader.h"
+
+/* 从第 1000 行开始读 100 行 */
+cxlsb_reader_read_page(reader, 0, 1000, 100, row_handler, NULL);
+
+/* 或分批流式读取 */
+cxlsb_reader_start_streaming(reader, 0);
+while (cxlsb_reader_has_more_rows(reader)) {
+    cxlsb_reader_read_batch(reader, 5000, row_handler, NULL);
+}
+cxlsb_reader_end_streaming(reader);
+```
+
+### 4.5 模板填充
 
 ```c
 #include "cxlsb/template_filler.h"
@@ -140,7 +156,7 @@ int main() {
 
 填充值按类型写入：文本走 SST，数值/日期走 RK/Real，布尔走 Bool；空白单元格不生成记录。
 
-### 4.5 行列上限与压缩级别
+### 4.6 行列上限与压缩级别
 
 ```c
 #include "cxlsb/limits.h"
@@ -157,6 +173,21 @@ cxlsb_writer_set_compression_level(writer, 6);  /* 0=store，1-9=deflate；默�
 - 配置是全局的，每次写入操作开始时快照，只影响之后的操作
 - 批量写、流式写、模板填充均受同一策略约束
 
+### 4.7 数字格式与样式
+
+```c
+/* 注册数字格式（返回格式 ID），再注册样式（返回 XF 索引） */
+int fmt = cxlsb_writer_add_format(writer, "#,##0.00");
+int style = cxlsb_writer_add_style(writer, fmt);
+
+/* 在 supplier 中通过带样式的构造函数绑定 XF 索引 */
+return cxlsb_cell_number_with_style(row * 1.5, (uint32_t)style);
+```
+
+- 相同格式字符串与相同样式会自动去重，返回既有 ID
+- 可用 `cxlsb_cell_number_with_style` / `cxlsb_cell_text_with_style` / `cxlsb_cell_date_with_style`
+- 也可直接给 `cxlsb_cell_data_t` 的 `style_index` 字段赋值
+
 ## 5. 支持的操作
 
 | 功能 | API | 描述 |
@@ -164,8 +195,11 @@ cxlsb_writer_set_compression_level(writer, 6);  /* 0=store，1-9=deflate；默�
 | 批量写入 | `cxlsb_writer_write_batch` | 单次调用写入整张工作表 |
 | 流式写入 | `cxlsb_writer_start_sheet` + `write_rows` + `end_sheet` | 逐批追加行 |
 | 行迭代 | `cxlsb_reader_for_each_row` | 回调处理每行数据 |
+| 分页读取 | `cxlsb_reader_read_page` | 按起始行与行数读取 |
+| 流式读取 | `cxlsb_reader_start_streaming` + `read_batch` + `end_streaming` | 分批读取，适合大文件 |
 | 模板填充（标记） | `cxlsb_template_filler_fill_marker` | 在 `${data}` 标记位置填充 |
 | 模板填充（索引） | `cxlsb_template_filler_fill_index` | 在指定行列位置填充 |
+| 数字格式与样式 | `cxlsb_writer_add_format` + `cxlsb_writer_add_style` | 自定义数字格式与 XF 样式索引 |
 | SST 管理 | 共享字符串表 | 文本单元格自动去重 |
 
 ## 6. 单元格类型
@@ -173,7 +207,7 @@ cxlsb_writer_set_compression_level(writer, 6);  /* 0=store，1-9=deflate；默�
 | 类型 | 常量 | BIFF12 记录 |
 |------|------|-------------|
 | 数字 | `CXLSB_CELL_NUMBER` | CellReal（type=4） |
-| 文本 | `CXLSB_CELL_TEXT` | CellIsst（type=7，SST）/ CellSt（type=6，内联） |
+| 文本 | `CXLSB_CELL_TEXT` | CellIsst（type=7，默认走 SST）；SST 不可用时回退 CellSt（type=6） |
 | 布尔 | `CXLSB_CELL_BOOL` | CellBool（type=9） |
 | 日期 | `CXLSB_CELL_DATE` | 带日期格式的 CellReal |
 | 空白 | `CXLSB_CELL_BLANK` | CellBlank（type=0） |

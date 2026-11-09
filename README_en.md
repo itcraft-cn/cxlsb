@@ -34,8 +34,11 @@ Viewed from this narrow, output-oriented angle, XLSX is simply not needed — XL
 | Batch Write | `cxlsb_writer_write_batch` | Write entire sheet in one call |
 | Streaming Write | `cxlsb_writer_start_sheet` + `write_rows` + `end_sheet` | Append rows incrementally |
 | Row Iteration | `cxlsb_reader_for_each_row` | Process each row with callback |
+| Paged Read | `cxlsb_reader_read_page` | Read a start row and row count |
+| Streaming Read | `cxlsb_reader_start_streaming` + `read_batch` + `end_streaming` | Batch reading for large files |
 | Template Fill (Marker) | `cxlsb_template_filler_fill_marker` | Fill at `${data}` marker position |
 | Template Fill (Index) | `cxlsb_template_filler_fill_index` | Fill at specified row/column |
+| Number Format & Style | `cxlsb_writer_add_format` + `cxlsb_writer_add_style` | Custom number formats and XF style indices |
 | SST Management | Shared String Table | Automatic deduplication for text cells |
 
 ## Cell Types
@@ -43,7 +46,7 @@ Viewed from this narrow, output-oriented angle, XLSX is simply not needed — XL
 | Type | Constant | BIFF12 Record |
 |------|----------|---------------|
 | Number | `CXLSB_CELL_NUMBER` | CellReal (type=4) |
-| Text | `CXLSB_CELL_TEXT` | CellIsst (type=7) for SST, CellSt (type=6) for inline |
+| Text | `CXLSB_CELL_TEXT` | CellIsst (type=7, SST by default); falls back to CellSt (type=6) when SST is unavailable |
 | Boolean | `CXLSB_CELL_BOOL` | CellBool (type=9) |
 | Date | `CXLSB_CELL_DATE` | CellReal with date format |
 | Blank | `CXLSB_CELL_BLANK` | CellBlank (type=0) |
@@ -226,14 +229,15 @@ cxlsb/
 │   ├── cell_data.h      # Cell data helpers
 │   ├── xlsb_writer.h    # Writer API
 │   ├── xlsb_reader.h    # Reader API
-│   └── template_filler.h # Template fill API
+│   ├── template_filler.h # Template fill API
+│   └── limits.h         # Row/column limit policy
 ├── src/
 │   ├── api/             # API implementation
 │   ├── format/          # BIFF12 format handling
 │   ├── container/       # ZIP container handling
 │   ├── io/              # Buffered I/O
 │   └── util/            # Utilities (varint, UTF-16)
-├── tests/               # Test suite (12 tests)
+├── tests/               # Test suite (15 tests)
 │   └── resources/       # Test templates
 └── tools/               # Utilities
 ```
@@ -254,14 +258,18 @@ cxlsb/
 | template_fill_marker | Marker-based fill |
 | template_fill_index | Index-based fill |
 | test_template_filler | Template filler API |
+| test_paged_read | Paged reading |
+| test_stream_read | Streaming reading |
+| test_limits_rk | Row/column limits and RK codec |
 
-All 12 tests passing.
+`tests/run_tests.sh` runs all 15 tests, all passing; the `test_styles` test must be compiled and run separately.
 
 ## Performance
 
 - **Supplier optimization**: Single call per row (cached)
 - **Dynamic buffers**: Size calculated from dimensions, no overflow risk
-- **SST threshold**: Strings >3 chars use SST, shorter use inline
+- **SST unified**: all text goes to the Shared String Table; inline CellSt only when SST is unavailable
+- **RK encoding**: eligible integers use RK records to reduce file size
 - **Streaming**: Supports datasets exceeding memory limits
 
 ## BIFF12 Format

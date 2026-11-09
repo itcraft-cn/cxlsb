@@ -34,8 +34,11 @@
 | 批量写入 | `cxlsb_writer_write_batch` | 单次调用写入整张工作表 |
 | 流式写入 | `cxlsb_writer_start_sheet` + `write_rows` + `end_sheet` | 逐批追加行 |
 | 行迭代 | `cxlsb_reader_for_each_row` | 回调处理每行数据 |
+| 分页读取 | `cxlsb_reader_read_page` | 按起始行与行数读取 |
+| 流式读取 | `cxlsb_reader_start_streaming` + `read_batch` + `end_streaming` | 分批读取，适合大文件 |
 | 模板填充 (标记) | `cxlsb_template_filler_fill_marker` | 在 `${data}` 标记位置填充 |
 | 模板填充 (索引) | `cxlsb_template_filler_fill_index` | 在指定行列位置填充 |
+| 数字格式与样式 | `cxlsb_writer_add_format` + `cxlsb_writer_add_style` | 自定义数字格式与 XF 样式索引 |
 | SST 管理 | 共享字符串表 | 文本单元格自动去重 |
 
 ## 单元格类型
@@ -43,7 +46,7 @@
 | 类型 | 常量 | BIFF12 记录 |
 |------|------|-------------|
 | 数字 | `CXLSB_CELL_NUMBER` | CellReal (类型=4) |
-| 文本 | `CXLSB_CELL_TEXT` | CellIsst (类型=7) 用SST，CellSt (类型=6) 内联 |
+| 文本 | `CXLSB_CELL_TEXT` | CellIsst (类型=7，默认走 SST)；SST 不可用时回退 CellSt (类型=6) |
 | 布尔 | `CXLSB_CELL_BOOL` | CellBool (类型=9) |
 | 日期 | `CXLSB_CELL_DATE` | CellReal 加日期格式 |
 | 空白 | `CXLSB_CELL_BLANK` | CellBlank (类型=0) |
@@ -226,14 +229,15 @@ cxlsb/
 │   ├── cell_data.h      # 单元格数据辅助函数
 │   ├── xlsb_writer.h    # 写入器 API
 │   ├── xlsb_reader.h    # 读取器 API
-│   └── template_filler.h # 模板填充 API
+│   ├── template_filler.h # 模板填充 API
+│   └── limits.h         # 行列上限策略
 ├── src/
 │   ├── api/             # API 实现
 │   ├── format/          # BIFF12 格式处理
 │   ├── container/       # ZIP 容器处理
 │   ├── io/              # 缓冲读写
 │   └── util/            # 工具函数 (varint, UTF-16)
-├── tests/               # 测试套件 (12个测试)
+├── tests/               # 测试套件 (15个测试)
 │   └── resources/       # 测试模板
 └── tools/               # 工具程序
 ```
@@ -254,14 +258,18 @@ cxlsb/
 | template_fill_marker | 标记填充 |
 | template_fill_index | 索引填充 |
 | test_template_filler | 模板填充 API |
+| test_paged_read | 分页读取 |
+| test_stream_read | 流式读取 |
+| test_limits_rk | 行列上限与 RK 编解码 |
 
-12个测试全部通过。
+`tests/run_tests.sh` 共运行 15 个测试，全部通过；`test_styles` 样式测试需单独编译运行。
 
 ## 性能优化
 
 - **Supplier 优化**: 每行单次调用 (缓存)
 - **动态缓冲区**: 按维度计算大小，无溢出风险
-- **SST 阈值**: >3字符用SST，短字符串内联
+- **SST 统一**: 文本统一写入共享字符串表，仅 SST 不可用时回退内联 CellSt
+- **RK 编码**: 符合条件的整数使用 RK 记录，减小文件体积
 - **流式写入**: 支持超出内存限制的数据集
 
 ## BIFF12 格式

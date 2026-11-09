@@ -112,7 +112,23 @@ int main() {
 }
 ```
 
-### 4.4 Template Fill
+### 4.4 Paged and Streaming Read
+
+```c
+#include "cxlsb/xlsb_reader.h"
+
+/* Read 100 rows starting from row 1000 */
+cxlsb_reader_read_page(reader, 0, 1000, 100, row_handler, NULL);
+
+/* Or read in batches while streaming */
+cxlsb_reader_start_streaming(reader, 0);
+while (cxlsb_reader_has_more_rows(reader)) {
+    cxlsb_reader_read_batch(reader, 5000, row_handler, NULL);
+}
+cxlsb_reader_end_streaming(reader);
+```
+
+### 4.5 Template Fill
 
 ```c
 #include "cxlsb/template_filler.h"
@@ -140,7 +156,7 @@ int main() {
 
 Filled values keep their type: text uses SST, numbers/dates use RK/Real, booleans use Bool; blank cells emit no record.
 
-### 4.5 Row/Column Limits and Compression
+### 4.6 Row/Column Limits and Compression
 
 ```c
 #include "cxlsb/limits.h"
@@ -157,6 +173,21 @@ cxlsb_writer_set_compression_level(writer, 6);  /* 0=store, 1-9=deflate; default
 - Configuration is global and snapshotted when each write operation starts
 - Batch writes, streaming writes and template filling share the same policy
 
+### 4.7 Number Formats and Styles
+
+```c
+/* Register a number format (returns format ID), then a style (returns XF index) */
+int fmt = cxlsb_writer_add_format(writer, "#,##0.00");
+int style = cxlsb_writer_add_style(writer, fmt);
+
+/* Bind the XF index via the styled cell constructors in the supplier */
+return cxlsb_cell_number_with_style(row * 1.5, (uint32_t)style);
+```
+
+- Identical format strings and identical styles are deduplicated and return the existing ID
+- Use `cxlsb_cell_number_with_style` / `cxlsb_cell_text_with_style` / `cxlsb_cell_date_with_style`
+- You can also set the `style_index` field of `cxlsb_cell_data_t` directly
+
 ## 5. Supported Operations
 
 | Feature | API | Description |
@@ -164,8 +195,11 @@ cxlsb_writer_set_compression_level(writer, 6);  /* 0=store, 1-9=deflate; default
 | Batch write | `cxlsb_writer_write_batch` | Write an entire sheet in one call |
 | Streaming write | `cxlsb_writer_start_sheet` + `write_rows` + `end_sheet` | Append rows incrementally |
 | Row iteration | `cxlsb_reader_for_each_row` | Process each row with a callback |
+| Paged read | `cxlsb_reader_read_page` | Read a start row and row count |
+| Streaming read | `cxlsb_reader_start_streaming` + `read_batch` + `end_streaming` | Batch reading for large files |
 | Template fill (marker) | `cxlsb_template_filler_fill_marker` | Fill at the `${data}` marker position |
 | Template fill (index) | `cxlsb_template_filler_fill_index` | Fill at a specified row/column |
+| Number format & style | `cxlsb_writer_add_format` + `cxlsb_writer_add_style` | Custom number formats and XF style indices |
 | SST management | Shared String Table | Automatic deduplication for text cells |
 
 ## 6. Cell Types
@@ -173,7 +207,7 @@ cxlsb_writer_set_compression_level(writer, 6);  /* 0=store, 1-9=deflate; default
 | Type | Constant | BIFF12 Record |
 |------|----------|---------------|
 | Number | `CXLSB_CELL_NUMBER` | CellReal (type=4) |
-| Text | `CXLSB_CELL_TEXT` | CellIsst (type=7, SST) / CellSt (type=6, inline) |
+| Text | `CXLSB_CELL_TEXT` | CellIsst (type=7, SST by default); falls back to CellSt (type=6) when SST is unavailable |
 | Boolean | `CXLSB_CELL_BOOL` | CellBool (type=9) |
 | Date | `CXLSB_CELL_DATE` | CellReal with date format |
 | Blank | `CXLSB_CELL_BLANK` | CellBlank (type=0) |
