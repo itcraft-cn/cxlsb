@@ -6,8 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Version numbers follow the Git tags `vX.Y.Z_YYYYMMDD`.
 
 ## [Unreleased]
+
+### Changed
+
+- Docs: synchronized README / MANUAL with the current API, adding paged and streaming reads plus number format and style notes; test count updated to 15
+- Docs: reorganized version history to align with the Git tags `v0.1.0` and `v0.2.0`
+
+## [0.2.0] - 2026-11-09
 
 ### Added
 
@@ -38,18 +46,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- All text now goes to the SST by default; inline `BrtCellSt` is only a fallback when SST is unavailable
+- Documentation layout unified as bilingual (README / CHANGELOG / MANUAL with cross-links)
 - Documentation: added "Design Positioning" section
-- Documentation: synchronized the test suite (15 tests) and API list
-- Version: moved to 0.2.0
+- Version: bumped from 0.1.0 to 0.2.0
 
-## [1.0.0] - 2026-04-28
+## [0.1.0] - 2026-05-01
 
 ### Added
-- Initial release of cxlsb ANSI C library
-- Writer API with batch and streaming modes
-- Reader API with row iteration
-- Template filler API with marker and index-based fill
-- Shared String Table (SST) management
+
+- Initial release of the cxlsb ANSI C library
+- Writer API: batch writes (`cxlsb_writer_write_batch`) and streaming writes (`start_sheet` / `write_rows` / `end_sheet`)
+- Reader API: row iteration (`cxlsb_reader_for_each_row`)
+- Template filler API: `fill_marker` (`${data}` marker) and `fill_index` (explicit position)
+- Shared String Table (SST) management with text deduplication, load/modify/save
 - Support for cell types: Number, Text, Boolean, Date, Blank
 - Dynamic buffer sizing based on data dimensions
 - Row-level caching to optimize supplier calls
@@ -57,56 +67,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 12 comprehensive tests with 100% pass rate
 
 ### Fixed
-- malloc NULL checks in template_filler.c
-- malloc NULL checks in xlsb_reader.c
-- malloc NULL checks in workbook_writer.c
-- Reader column mapping: cells[col - first_col] for relative index
-- SST string length: utf16_len / 2 (char count, not byte count)
+
+- malloc NULL checks in template_filler.c, xlsb_reader.c and workbook_writer.c
+- Reader column mapping: `cells[col - first_col]` for relative index
+- SST string length uses character count (UTF-16 code units), not byte count
 - WsView block alignment with correct byte layout
-- Template preservation: keep cells outside fill region
+- WsProp / WsView / WsFmtInfo aligned with the jxlsb reference
+- Workbook.bin and Content_Types.xml structure
+- BIFF12 cell references and record sizes
+- Streaming mode sheet_writer implementation
+- Template preservation: keep cells outside the fill region
 
 ### Changed
+
 - Optimized supplier calls: single invocation per row with caching
-- Defined CXLSB_SST_INLINE_THRESHOLD constant (replaced magic number)
 - Dynamic sheet buffer sizing in template_filler
 - Dynamic SST buffer sizing based on string content
-
-## [0.9.0] - 2026-04-27
-
-### Added
-- Streaming write mode for large datasets
-- Template fill with ${data} marker detection
-- Read/write roundtrip tests
-- Mixed mode test (batch + streaming)
-
-### Fixed
-- Streaming mode sheet_writer implementation
-- Cell reference and record sizes
-- Workbook.bin and Content_Types.xml structure
-
-## [0.8.0] - 2026-04-26
-
-### Added
-- Basic XLSB writer functionality
-- Basic XLSB reader functionality
-- BIFF12 format handling (varint encoding, UTF-16LE)
-- ZIP container handling with libzip
-- SST table with hash-based deduplication
-
-### Fixed
-- WsProp/WsView/WsFmtInfo to match jxlsb reference
 - Row/column header visibility control
-
-## [0.7.0] - 2026-04-25
-
-### Added
-- Project structure setup
-- Core type definitions (types.h)
-- Error codes definition (error_codes.h)
-- Cell data helpers (cell_data.h)
-- Buffer writer/reader implementation
-- Varint encoding/decoding
-- UTF-8 to UTF-16LE conversion
 
 ---
 
@@ -114,27 +91,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Description |
 |---------|------|-------------|
-| 0.2.0 | 2026-11-09 | Unreleased: format and limit policy alignment |
-| 1.0.0 | 2026-04-28 | Production release, all tests passing |
-| 0.9.0 | 2026-04-27 | Streaming and template fill |
-| 0.8.0 | 2026-04-26 | Basic read/write functionality |
-| 0.7.0 | 2026-04-25 | Project initialization |
+| 0.2.0 | 2026-11-09 | Format and limit policy alignment, template fill fixes |
+| 0.1.0 | 2026-05-01 | Initial release: basic read/write, streaming and template fill |
 
 ## Roadmap
 
-### [1.1.0] - Planned
+### [0.3.0] - Planned
 - Cell font/fill/border styles (number formats and XF style indices are already supported)
 - Conditional formatting
 - Formula support (read-only)
 - Merged cells in streaming mode
 
-### [1.2.0] - Planned
+### [0.4.0] - Planned
 - Windows CI/CD pipeline
 - Performance benchmark suite
 - Memory leak detection with valgrind
 - Code coverage reporting
 
-### [2.0.0] - Future
+### [1.0.0] - Future
 - Multi-sheet concurrent processing
 - Encryption support
 - Compression optimization
